@@ -22,7 +22,7 @@ mipFilter::mipFilter(unsigned int idData, dataHandler *dataHandler) : itkVtkFilt
 mipFilter::~mipFilter(){
 }
 
-vtkVolume* mipFilter::compute(long wl, long ww, int clut, int minPixel, bool gaussFilter) {
+vtkVolume* mipFilter::compute(long wl, long ww, int clut, int minPixel, bool gaussFilter, float sampleDistance, bool shading, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower) {
 	//Funzione utilizzata per realizzare la correzione dell'immagine e per convertire il tipo
 	vtkImageShiftScale *shift = vtkImageShiftScale::New();
 
@@ -174,16 +174,35 @@ vtkVolume* mipFilter::compute(long wl, long ww, int clut, int minPixel, bool gau
 		vtkVolumeProperty *mipprop = vtkVolumeProperty::New();
 		mipprop->SetScalarOpacity(opacityTransferFunction);       
 		mipprop->SetColor(colorTransferFunction);
-		mipprop->ShadeOn();
+		//mipprop->ShadeOn();
 		mipprop->SetInterpolationTypeToLinear(); 
+
+		if (shading) {
+			mipprop->ShadeOn();
+			mipprop->SetAmbient(shadingAmbient);
+			mipprop->SetDiffuse(shadingDiffuse);
+			mipprop->SetSpecular(shadingSpecular);
+			mipprop->SetSpecularPower(shadingSpecularPower);
+		}
+		else {
+			mipprop->ShadeOff();
+		}
 
 		//Creo la funzione per realizzare il Mip utilizzando RayCasting attraverso il valore Scalare
 		vtkVolumeRayCastMIPFunction *MIPFunction1 = vtkVolumeRayCastMIPFunction::New();
 		MIPFunction1->SetMaximizeMethodToScalarValue();
 
 		vtkVolumeRayCastMapper *rayCastMapper= vtkVolumeRayCastMapper::New();
-		rayCastMapper->SetMinimumImageSampleDistance(1.5);
-		rayCastMapper->SetSampleDistance(1.5);
+
+		//rayCastMapper->AutoAdjustSampleDistancesOff();
+		rayCastMapper->AutoAdjustSampleDistancesOn();
+		rayCastMapper->SetSampleDistance(sampleDistance);
+		rayCastMapper->SetImageSampleDistance(1.0);
+		rayCastMapper->SetMinimumImageSampleDistance(1.0);
+		rayCastMapper->SetMaximumImageSampleDistance(16.0);
+
+		//rayCastMapper->SetMinimumImageSampleDistance(1.5);
+		//rayCastMapper->SetSampleDistance(1.5);
 
 		//Determino il tipo di immagine , filtrata o non , da dare come input al RayCast .
 		if(gaussFilter) {
@@ -213,7 +232,7 @@ vtkVolume* mipFilter::compute(long wl, long ww, int clut, int minPixel, bool gau
 }
 
 
-vtkVolume* mipFilter::computeRgb(long wl, long ww, int clut, bool gaussFilter) {
+vtkVolume* mipFilter::computeRgb(long wl, long ww, int clut, bool gaussFilter, float sampleDistance, bool shading, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower) {
 	//Filtro di smoothing
 	vtkImageGaussianSmooth *gauss = NULL;
 	
@@ -381,16 +400,35 @@ vtkVolume* mipFilter::computeRgb(long wl, long ww, int clut, bool gaussFilter) {
 		volumeProperty->SetScalarOpacity(2, opacityTransferFunction);
 		
 		volumeProperty->SetComponentWeight(3, 0);
-		volumeProperty->ShadeOn();
+		//volumeProperty->ShadeOn();
+
+		if (shading) {
+			volumeProperty->ShadeOn();
+			volumeProperty->SetAmbient(shadingAmbient);
+			volumeProperty->SetDiffuse(shadingDiffuse);
+			volumeProperty->SetSpecular(shadingSpecular);
+			volumeProperty->SetSpecularPower(shadingSpecularPower);
+		}
+		else {
+			volumeProperty->ShadeOff();
+		}
 
 		//Creo la funzione per realizzare il Mip utilizzando RayCasting attraverso il valore Scalare
 		/*vtkVolumeRayCastMIPFunction *MIPFunction = vtkVolumeRayCastMIPFunction::New();
 		MIPFunction->SetMaximizeMethodToScalarValue();*/
 
 		vtkFixedPointVolumeRayCastMapper *rayCastMapper= vtkFixedPointVolumeRayCastMapper::New();
-		float LOD = 3.5;
+
+		//rayCastMapper->AutoAdjustSampleDistancesOff();
+		rayCastMapper->AutoAdjustSampleDistancesOn();
+		rayCastMapper->SetSampleDistance(sampleDistance);
+		rayCastMapper->SetImageSampleDistance(1.0);
+		rayCastMapper->SetMinimumImageSampleDistance(1.0);
+		rayCastMapper->SetMaximumImageSampleDistance(16.0);
+
+		/*float LOD = 3.5;
 		rayCastMapper->SetMinimumImageSampleDistance(LOD);
-		rayCastMapper->SetMaximumImageSampleDistance(3*LOD);
+		rayCastMapper->SetMaximumImageSampleDistance(3*LOD);*/
 
 		//Determino il tipo di immagine, filtrata o no, da dare come input al RayCast
 		if(gaussFilter) {

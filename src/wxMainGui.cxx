@@ -27,6 +27,7 @@
 #include "icons/QueryRetrieve.xpm"
 #include "icons/Export.xpm"
 #include "icons/Anonymizer.xpm"
+#include "icons/ImageFusion.xpm"
 #include "icons/Send.xpm"
 #include "icons/Viewer.xpm"
 #include "icons/Trash.xpm"
@@ -76,6 +77,7 @@ BEGIN_EVENT_TABLE(wxMainGui, wxFrame)
 	EVT_MENU(Tool_volumerendering,wxMainGui::onVolumeRendering)
 	EVT_MENU(Tool_surface,wxMainGui::onSurfaceRendering)
 	EVT_MENU(Tool_anonymizer,wxMainGui::onAnonymize)
+	EVT_MENU(Tool_imageFusion,wxMainGui::onImageFusion)
 	EVT_MENU(Tool_export,wxMainGui::onExportToDicom)
 	EVT_MENU(m_fileImportFile, wxMainGui::onOpenImage)
 	EVT_MENU(m_fileImportSeries, wxMainGui::onOpenSeries)
@@ -233,6 +235,7 @@ wxMainGui::wxMainGui(const wxString& title, const wxPoint& pos, const wxSize& si
     INIT_TOOL_BMP(queryretrieve);
     INIT_TOOL_BMP(export);
     INIT_TOOL_BMP(anonymizer);
+    INIT_TOOL_BMP(imageFusion);
     INIT_TOOL_BMP(send);
     INIT_TOOL_BMP(viewer);
 	INIT_TOOL_BMP(volumerendering);
@@ -253,11 +256,13 @@ wxMainGui::wxMainGui(const wxString& title, const wxPoint& pos, const wxSize& si
 	toolBar->AddTool(Tool_queryretrieve, _T("Query"), toolBarBitmaps[Tool_queryretrieve], _T("Query and retrieve a DICOM study from your PACS Archive"));    
     toolBar->AddTool(Tool_send, _T("Send"), toolBarBitmaps[Tool_send], _T("Send selected study/series to your PACS Archive"));
 	toolBar->AddSeparator();
-    toolBar->AddTool(Tool_viewer, _T("2D Viewer"), toolBarBitmaps[Tool_viewer], _T("Open a 2D viewer"));
+	toolBar->AddTool(Tool_imageFusion, _T("Image Fusion"), toolBarBitmaps[Tool_imageFusion], _T("Fuse selected study/series"));
+	toolBar->AddSeparator();
+	toolBar->AddTool(Tool_viewer, _T("2D Viewer"), toolBarBitmaps[Tool_viewer], _T("Open a 2D viewer"));
 	toolBar->AddTool(Tool_volumerendering, _T("3D Direct VR"), toolBarBitmaps[Tool_volumerendering], _T("3D Direct Volume Rendering"));
 	toolBar->AddTool(Tool_surface, _T("3D Indirect VR"), toolBarBitmaps[Tool_surface], _T("3D Indirect Volume Rendering"));
 	toolBar->AddSeparator();
-    toolBar->AddTool(Tool_trash, _T("Delete"), toolBarBitmaps[Tool_trash], _T("Delete selected exams from the album"));
+	toolBar->AddTool(Tool_trash, _T("Delete"), toolBarBitmaps[Tool_trash], _T("Delete selected exams from the album"));
 
 	toolBar->Realize();
     toolBar->SetRows(1);
@@ -455,7 +460,7 @@ void wxMainGui::onVolumeRendering(wxCommandEvent& event) {
 			wx2dGui *w = new wx2dGui(_T("MITO: 2D Viewer"), wxPoint(0, 0), wxGetClientDisplayRect().GetSize());
 			new2dViewer(w->new2dViewer(this));
 			itkVtkData *itkVtkData_ = new itkVtkData();
-			if(!((itkVtkData*)(getDataHandler()->getData(idData)))->getRgb()) {
+			if(!((itkVtkData*)(getDataHandler()->getData(idData)))->getRgb()) { // non RGB
 				Duplicator::Pointer duplicator = Duplicator::New();
 				duplicator->SetInputImage(((itkVtkData*)(getDataHandler()->getData(idData)))->getItkImage());
 				duplicator->SetMetaDataDictionary(((itkVtkData*)(getDataHandler()->getData(idData)))->getItkImage()->GetMetaDataDictionary());
@@ -463,7 +468,7 @@ void wxMainGui::onVolumeRendering(wxCommandEvent& event) {
 				itkVtkData_->setItkImage(duplicator->GetOutput());
 				itkVtkData_->setRgb(false);
 			}
-			else {
+			else { // RGB
 				RGBDuplicator::Pointer duplicator = RGBDuplicator::New();
 				duplicator->SetInputImage(((itkVtkData*)(getDataHandler()->getData(idData)))->getItkRgbImage());
 				duplicator->SetMetaDataDictionary(((itkVtkData*)(getDataHandler()->getData(idData)))->getItkRgbImage()->GetMetaDataDictionary());
@@ -1625,7 +1630,7 @@ void wxMainGui::onAlbumActivated(wxTreeEvent& evt)
 	unsigned int idData = getDataHandler()->newData(getViewer(idViewer)->newAppData(), idViewer);
 
 
-	// by Nello per la gestione del progressDialog
+	// Barra di avanzamento del caricamento serie
 	wxProgressDialog * wait = new wxProgressDialog("", "please wait, loading data...", 100, this, wxPD_APP_MODAL | wxPD_SMOOTH | wxPD_AUTO_HIDE | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME | wxPD_REMAINING_TIME);
 	((itkVtkData*)(getDataHandler()->getData(idData)))->setBusyWindow(wait);	
 	((wxVtkViewer2d*)(getViewer(idViewer)->getViewerDrawing()))->getWxWindow()->Freeze();				
@@ -2458,18 +2463,20 @@ bool wxMainGui::onViewerQuit(unsigned int idViewer) {
 }
 
 void wxMainGui::onShowAboutDialog(wxCommandEvent& WXUNUSED(event)) {
-	const wxString name = "MITO";
-	const wxString version = "1.0 Beta";
-	const wxString copyright = "(C) 2006-2009 Institute for High Performance Computing and Networking (ICAR-CNR), Naples Branch";
+	const wxString name = "MITO - Medical imaging toolkit";
+	const wxString version = "2.0";
+	const wxString copyright = "(C) 2006-2011 Institute for High Performance Computing and Networking of the National Research Council of Italy (ICAR-CNR), Naples Branch";
 	const wxString conjunction = "Institute of Biostructure and Bioimaging (IBB-CNR)";
-	const wxString hyperlink = "<http://amico.icar.cnr.it/>";
+	const wxString hyperlink = "<http://ihealthlab.icar.cnr.it/>";
+	const wxString hyperlink2 = "<http://amico.icar.cnr.it/>";
 
 	wxString msg;
     msg << name;
     msg << _(" Version ") << version << _T('\n');
     msg << copyright << _T('\n');
 	msg << _("in conjunction with ") << conjunction << _T('\n');
-    msg << hyperlink;
+    msg << hyperlink << _T('\n');
+	msg << hyperlink2;
 
     wxMessageBox(msg, _T("About ") + name);
 }

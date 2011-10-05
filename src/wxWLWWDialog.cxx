@@ -27,9 +27,20 @@ wxWLWWDialog::wxWLWWDialog(wxWindow* window) : wxDialog(window, -1, "Modify WL/W
 }
 
 void wxWLWWDialog::onOkDown(wxCommandEvent& event) {
-	if(strcmp(_wxWL->GetValue().c_str(), "") && strcmp(_wxWW->GetValue().c_str(), "")) {
+	if(strcmp(_wxWL->GetValue().c_str(), "") && strcmp(_wxWW->GetValue().c_str(), "")) 
+	{
 		_wl = atof(_wxWL->GetValue());
+		if (_wl < -9999) 
+			_wl = -9999;
+		else if (_wl > 9999) 
+			_wl = 9999;
+
 		_ww = atof(_wxWW->GetValue());
+		if (_ww < 1) 
+			_ww = 1;
+		else if (_ww > 9999) 
+			_ww = 9999;	
+
 		SetReturnCode(wxID_OK);
 		Destroy();
 	}

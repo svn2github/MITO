@@ -21,8 +21,9 @@
 enum techniqueRayCasting {
 	VolumeRendering,
 	VolumeFixedPointRendering,
+	MIP,
     VolumeTextureRendering,
-	MIP
+	GPURendering,
 };
 
 /**
@@ -64,16 +65,27 @@ public:
 	wxComboBox* _comboBoxClut;
 
 	/** 
+	 * \var wxComboBox* _comboBoxRendering
+	 * \brief Combobox per la scelta del rendering mode
+	 */
+	wxComboBox* _comboBoxRendering;
+
+	wxSlider* _itemSlider;
+
+	/** 
 	 * \var wxComboBox* _comboBoxZoom
 	 * \brief Combobox per la scelta dello zoom
 	 */
-	wxComboBox* _comboBoxZoom;
+	//wxComboBox* _comboBoxZoom;
 
 	// PROVA
-	wxComboBox* _comboBoxSampleDistance;
+	//wxComboBox* _comboBoxSampleDistance;
 
 
 private:
+
+	wxStaticText* _textWLlabel;
+	wxStaticText* _textWWlabel;
 
 	/** 
 	 * \var wxMenu* _menuProjectionType
@@ -129,18 +141,21 @@ private:
 	 */
 	techniqueRayCasting _renderingTechnique;
 
+	double _initialOrientation[3];
+	double _initialScale[3];
+	double _initialPosition[3];
 
 	/** 
 	 * \var bool _3DtextureSupported
 	 * \brief Indica se il 3D texture mapping è abilitato o meno
 	 */
-	bool _3DtextureSupported;
+	//bool _3DtextureSupported;
 
 	/** 
 	 * \var bool _tissueVisionSelected;
 	 * \brief Indica se è stata selezionata una delle visioni di tessuto predefinite
 	 */
-	bool _tissueVisionSelected;
+	//bool _tissueVisionSelected;
 
 	/** 
 	 * \var long _wl
@@ -165,6 +180,8 @@ private:
 	 * \brief Distanza tra l'osservatore e lo schermo
 	 */
 	int _POD;
+
+	int _availableVRAM;
 
 	/** 
 	 * \var int _croppingInitialized
@@ -270,6 +287,12 @@ private:
 	 */
 	float _sampleDistance;
 
+	bool	_isShadeActive;
+	double	_shadingAmbient;
+	double	_shadingDiffuse;
+	double	_shadingSpecular;
+	double	_shadingSpecularPower;
+
 	/** 
 	 * \fn void getBoundsDepthInfo(double & closest, double & farthest)
 	 * \brief Fornisce in formazioni sui bound del modello principale
@@ -297,7 +320,6 @@ private:
 	 */
 	void destroy3DCursor();
 
-
 	/** 
 	 * \fn void create3DAxes()
 	 * \brief crea gli assi 3D
@@ -310,7 +332,7 @@ private:
 	 */
 	void destroy3DAxes();
 
-
+	void check3DcursorCapability();
 
 public:
 
@@ -367,6 +389,12 @@ public:
 	*/
 	void onChangeRendering(wxCommandEvent& event);
 
+	void onLODslider(wxCommandEvent& event);
+
+	void onActivateShading(wxCommandEvent& event);
+
+	void onChangeShadingParameters(wxCommandEvent& event);
+
 	/**
 	* \fn void onChangeInputDevice(wxCommandEvent& event)
 	* \brief Cambia il dispositivo di input utilizzato
@@ -415,6 +443,13 @@ public:
 	* \param event Evento
 	*/
 	void onTextureRendering(wxCommandEvent& event);
+
+	/**
+	* \fn void onGPURendering(wxCommandEvent& event)
+	* \brief Imposta il GPU-based rendering quale tecnica di ricostruzione 3D
+	* \param event Evento
+	*/
+	void onGPURendering(wxCommandEvent& event);
 
 	/**
 	* \fn void onFixedPointRendering(wxCommandEvent& event)
@@ -523,27 +558,6 @@ public:
 	void onVOI(wxCommandEvent& event);
 
 	/**
-	* \fn void void onSkinVision(wxCommandEvent& event)
-	* \brief Imposta una funzione di trasferimento che permetta di vedere la pelle
-	* \param event Evento
-	*/
-	void onSkinVision(wxCommandEvent& event);
-
-	/**
-	* \fn void void onMuscleVision(wxCommandEvent& event)
-	* \brief Imposta una funzione di trasferimento che permetta di vedere la pelle
-	* \param event Evento
-	*/
-	void onMuscleVision(wxCommandEvent& event);
-
-	/**
-	* \fn void void onBoneVision(wxCommandEvent& event)
-	* \brief Imposta una funzione di trasferimento che permetta di vedere la pelle
-	* \param event Evento
-	*/
-	void onBoneVision(wxCommandEvent& event);
-
-	/**
 	* \fn void onWiiConfiguration(wxCommandEvent& event)
 	* \brief Configura i Wiimote
 	* \param event Evento
@@ -575,20 +589,6 @@ public:
 	void onStereo(wxCommandEvent& event);
 
 	/**
-	* \fn void onEyeAngle(wxCommandEvent& event)
-	* \brief Imposta l'angolo di visualizzazione stereoscopica
-	* \param event Evento
-	*/
-	//void onEyeAngle(wxCommandEvent& event);
-
-	/**
-	* \fn void onProjectionType(wxCommandEvent& event)
-	* \brief Imposta il tipo di proiezione
-	* \param event Evento
-	*/
-	void onProjectionType(wxCommandEvent& event);
-
-	/**
 	* \fn void onCursorType(wxCommandEvent& event)
 	* \brief Imposta il tipo di cursore 2D/3D
 	* \param event Evento
@@ -603,11 +603,18 @@ public:
 	void onStereoModeAnaglyph(wxCommandEvent& event);
 
 	/**
-	* \fn void onProjectionType(wxCommandEvent& event)
+	* \fn void onStereoModeActivePassive(wxCommandEvent& event)
 	* \brief Imposta la modalità stereoscopica per schede grafiche quad-buffered
 	* \param event Evento
 	*/
 	void onStereoModeActivePassive(wxCommandEvent& event);
+
+	/**
+	* \fn void onStereoModeCheckerboard(wxCommandEvent& event)
+	* \brief Imposta la modalità stereoscopica checkerboard
+	* \param event Evento
+	*/
+	void onStereoModeCheckerboard(wxCommandEvent& event);
 
 	/**
 	* \fn void onProjectionTypeParallel(wxCommandEvent& event)
@@ -615,6 +622,13 @@ public:
 	* \param event Evento
 	*/
 	void onProjectionTypeParallel(wxCommandEvent& event);
+
+	/**
+	* \fn void onProjectionTypeEndoscopy(wxCommandEvent& event)
+	* \brief Imposta il tipo di proiezione endoscopica
+	* \param event Evento
+	*/
+	void onProjectionTypeEndoscopy(wxCommandEvent& event);
 
 	/**
 	* \fn void onProjectionTypePerspective(wxCommandEvent& event)
@@ -630,11 +644,7 @@ public:
 	*/
 	void updateVolume(bool doARender=true);
 
-	/**
-	* \fn void updateStereoView()
-	* \brief aggiorna eye angle e parallax della camera
-	*/
-	//void updateStereoView();	
+	void updateShading(double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower);
 
 	/**
 	* \fn void updateStereoView(bool doARender)
@@ -648,7 +658,7 @@ public:
 	* \brief aggiorna eye angle e parallax della camera in base al valore dy
 	* \param dy offset tra Y attuale e precedente del mouse
 	*/
-	void updateStereoView(int dy);
+	//void updateStereoView(int dy);
 
 	/**
 	* \fn void setInitialDistance()
@@ -735,6 +745,7 @@ public:
 	*/
 	void onModifyMotionFactor(wxCommandEvent& WXUNUSED(event));
 
+	void onModifyAvailableVRAM(wxCommandEvent& WXUNUSED(event));
 	
 	/**
 	* \fn onEnterToolbar()
@@ -742,13 +753,6 @@ public:
 	* \param wxMouseEvent Evento
 	*/
 	void onEnterToolbar(wxMouseEvent& event);
-
-	/**
-	* \fn set3DtextureSupported(bool texture3Dsupported)
-	* \brief setta la variabile _3DtextureSupported
-	* \param bool texture3Dsupported
-	*/
-	void set3DtextureSupported(bool texture3Dsupported);
 
 	/**
 	* \fn void setRenderingTechnique(techniqueRayCasting renderingTechnique)
@@ -820,7 +824,22 @@ public:
 	inline void setWlWw(long wl, long ww) {
 		_wl = wl;
 		_ww = ww;
+		const wxString textWL = wxString::Format( wxT("%i"), (int)_wl);
+		const wxString textWW = wxString::Format( wxT("%i"), (int)_ww);
+		_textWLlabel->SetLabel(textWL);
+		_textWWlabel->SetLabel(textWW);
 		if(_viewer3d) ((appWxVtkInteractor*)_viewer3d->getWxWindow())->setWlWw(wl,ww);
+	}
+
+	inline void getShadingValues(double &ambient, double &diffuse, double &specular, double &specularPower) {
+		ambient = _shadingAmbient;
+		diffuse = _shadingDiffuse;
+		specular = _shadingSpecular;
+		specularPower = _shadingSpecularPower;
+	}
+
+	inline void setSampleDistance(float sampleDistance) {
+		_sampleDistance = sampleDistance;
 	}
 
 	inline double getGlobalZoomFactor() {
@@ -829,6 +848,14 @@ public:
 
 	inline void setGlobalZoomFactor(double factor) {
 		_globalZoomFactor = factor;
+	}
+
+	inline void setPOD(int POD) {
+		_POD = POD;
+	}
+
+	inline int getPOD() {
+		return _POD;
 	}
 
 	/**
@@ -931,19 +958,6 @@ public:
 		((appWxVtkInteractor*)_viewer3d->getWxWindow())->setCLUT(_clut);
 	}
 
-	/**
-	* \fn void setPOD(int POD)
-	* \brief Setta la distanza tra osservatore e schermo
-	* \param POD Distanza
-	*/
-	void setPOD(int POD);
-
-	/**
-	* \fn int getPOD()
-	* \brief Ottiene la distanza tra osservatore e schermo
-	* \return Distanza
-	*/
-	int getPOD();
 	
 	/**
 	* \fn int set3DCursorRGBColor(double R, double G, double B)
@@ -951,6 +965,10 @@ public:
 	* \param R,G,B terna RGB
 	*/
 	void set3DCursorRGBColor(double R, double G, double B);
+
+	void checkSuitableMappers();
+
+	void computeOpacityColor();
 
 private:
 	DECLARE_EVENT_TABLE()
@@ -970,26 +988,15 @@ enum {
 	IDREC3d_SkinTool,
 	IDREC3d_MuscleTool,
 	IDREC3d_BoneTool,
-
-	// Wii
 	IDREC3d_WiiTool,
 	IDREC3d_WiiConfigurationTool,
 	IDREC3d_WiiChangeSceneIRInteraction,
 	IDREC3d_ModifyCDRatioFunction,
 	IDREC3d_ModifyMotionFactor,
-
 	IDREC3d_BestTool,
 	IDREC3d_CroppingTool,
 	IDREC3d_OrientTool,
-	//IDREC3d_SLIDER1,
-	
-	IDREC3d_RADIOBUTTONGROUPRendering1,
-	IDREC3d_RADIOBUTTONGROUPRendering2,
-	IDREC3d_RADIOBUTTONGROUPRendering3,
-	IDREC3d_RADIOBUTTONGROUPRendering4,
-
-	IDREC3d_RADIOBOX2,
-	IDREC3d_TOOLBAR3D,
+	IDREC3d_LODslider,
 	IDREC3d_fileCloseWindow,
 	IDREC3d_3dviewerCoronalView,
 	IDREC3d_3dviewerLeftSagittalView,
@@ -1007,23 +1014,22 @@ enum {
 	IDREC3d_HelpRequestFeature,
 	IDREC3d_HelpAbout,
 	IDREC3d_3dviewerResetToInitialView,
-	
 	IDREC3d_RADIOBUTTONGROUPInputDevice1,
 	IDREC3d_RADIOBUTTONGROUPInputDevice2,
-
-	IDREC3d_RADIOBUTTONGROUPStereoMode1,
-	IDREC3d_RADIOBUTTONGROUPStereoMode2,
-
-	IDREC3d_COMBOBOXZoom,
+	IDREC3d_stereo,
+	IDREC3d_perspective,
+	IDREC3d_parallel,
+	IDREC3d_endoscopy,
 	IDREC3d_COMBOBOXClut,
-	IDREC3d_COMBOBOXSampleDistance,
-	IDREC3d_RADIOBOXProjectionType,
-	
+	IDREC3d_COMBOBOXRenderingMode,
 	IDREC3d_RADIOBUTTONGROUPCursorType1,
 	IDREC3d_RADIOBUTTONGROUPCursorType2,
-
-	//m_3d_Mouse_Button_Function,
-	//m_3d_Interaction,
+	IDREC3d_3DcursorText,
+	IDREC3d_shadingCheckBox,
+	IDREC3d_shadingChangeButton,
+	IDREC3d_shadingAmbientText,
+	IDREC3d_shadingSpecularText,
+	IDREC3d_shadingDiffuseText,
 	m_3d_WindowLevel,
 	m_3d_Move,
 	m_3d_Dolly,
@@ -1033,20 +1039,17 @@ enum {
 	m_3d_voi,
 	m_3d_VolumeRendering,
 	m_3d_TextureRendering,
+	m_3d_GPURendering,
 	m_3d_FixedPointRendering,
 	m_3d_MIP,
-	//m_3d_MinIP,
 	m_3d_RenderingMode,
-	m_3d_ParallelProjectionTypeVR,
-	m_3d_PerspectiveProjectionTypeVR,
-	m_3d_ProjectionTypeVR,
 	m_3d_StereoModeVR,
-	m_3d_StereoModeOffVR,
-	m_3d_StereoModeOnVR,
 	m_3d_StereoModeAnaglyphVR,
 	m_3d_StereoModeActivePassiveVR,
+	m_3d_StereoModeCheckerboardVR,
 	m_3d_ModifyObserverDistanceVR,
-	m_3d_ModifyWLWWVR
+	m_3d_ModifyWLWWVR,
+	m_3d_ModifyAvailableVRAM
 };
 
 

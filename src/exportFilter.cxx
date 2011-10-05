@@ -37,11 +37,13 @@ void exportFilter::exportImageToDicom(itkVtkData *pInputData, string outputFilen
 	if(!_rgb) 
 	{
 		ImageType::Pointer inputImage = pInputData->getItkImage();
+		/*
 		DictionaryType & dictionary = inputImage->GetMetaDataDictionary();
 
 		std::string entryId = "0028|1052";
 		std::string entryvalue = "0";
 		itk::EncapsulateMetaData<std::string>(dictionary, entryId, entryvalue);
+		*/
 
 		typedef itk::ImageFileWriter <ImageType>  WriterType;
 
@@ -65,11 +67,13 @@ void exportFilter::exportImageToDicom(itkVtkData *pInputData, string outputFilen
 		typedef itk::ImageFileReader <RGBImageType> RGBReaderType;
 
 		RGBImageType::Pointer inputImage = pInputData->getItkRgbImage();
+		/*
 		DictionaryType & dictionary = inputImage->GetMetaDataDictionary();
 
 		std::string entryId = "0028|1052";
 		std::string entryvalue = "0";
 		itk::EncapsulateMetaData<std::string>(dictionary, entryId, entryvalue);
+		*/
 
 		typedef itk::ImageFileWriter <RGBImageType>  RGBWriterType;
 
@@ -266,6 +270,7 @@ void exportFilter::exportSeriesToDicom(string inputDirectory, string outputDirec
 
 			seriesWriter->SetFileNames(namesGenerator->GetOutputFileNames());
 
+			/*
 			typedef DictionaryType*  DictionaryRawPointer;
 			typedef std::vector<DictionaryRawPointer> DictionaryArrayType;
 			typedef const DictionaryArrayType* DictionaryArrayRawPointer;
@@ -281,6 +286,7 @@ void exportFilter::exportSeriesToDicom(string inputDirectory, string outputDirec
 			}
 
 			seriesWriter->SetMetaDataDictionaryArray(dictionaryArray);
+			*/
 
 			try {
 				seriesWriter->Update();
@@ -327,6 +333,7 @@ void exportFilter::exportSeriesToDicom(string inputDirectory, string outputDirec
 
 			seriesWriter->SetFileNames(namesGenerator->GetOutputFileNames());
 			
+			/*
 			typedef DictionaryType*  DictionaryRawPointer;
 			typedef std::vector<DictionaryRawPointer> DictionaryArrayType;
 			typedef const DictionaryArrayType* DictionaryArrayRawPointer;
@@ -342,6 +349,7 @@ void exportFilter::exportSeriesToDicom(string inputDirectory, string outputDirec
 			}
 
 			seriesWriter->SetMetaDataDictionaryArray(dictionaryArray);
+			*/
 
 			try {
 				seriesWriter->Update();

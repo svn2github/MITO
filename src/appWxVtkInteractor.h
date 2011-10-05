@@ -16,7 +16,6 @@
 
 #include	"wxWiimoteEvent.h"
 #include	"wxWiiManager.h"	
-#include	"vtkInteractorStyleWII.h"
 //#include	"wxVocalDecoder.h"
 #include	"vtkCellLocator.h"
 
@@ -678,9 +677,15 @@ public:
 
 	/**
 	 * \fn void dummyMethod()
-	 * \brief metodo stupido e "temporaneo"
+	 * \brief simula un click del tasto sinistro del mouse
 	*/
 	void dummyMethod();
+
+	/**
+	 * \fn void dummyMethod()
+	 * \brief simula un click del tasto destro del mouse
+	*/
+	void dummyMethodRight();
 
 	DECLARE_EVENT_TABLE();
 };

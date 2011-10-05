@@ -38,7 +38,7 @@ public:
 	 * \param minPixel Minimo valore dell'intensità dei pixel
 	 * \param gaussFilter Abilita il filtro di smoothing gaussiano
 	 */
-    vtkVolume* compute(long wl, long ww, int clut, int minPixel, bool gaussFilter);
+    vtkVolume* compute(long wl, long ww, int clut, int minPixel, bool gaussFilter, float sampleDistance, bool shading, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower);
 
 	/**
 	 * vtkVolume* computeRgb(long wl, long ww, int clut, bool gaussFilter)
@@ -48,7 +48,7 @@ public:
 	 * \param clut Indica che tipo di CLUT applicare al volume
 	 * \param gaussFilter Abilita il filtro di smoothing gaussiano
 	 */
-    vtkVolume* computeRgb(long wl, long ww, int clut, bool gaussFilter);
+    vtkVolume* computeRgb(long wl, long ww, int clut, bool gaussFilter, float sampleDistance, bool shading, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower);
 };
 
 #endif _mipFilter_h_

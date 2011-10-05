@@ -12,6 +12,8 @@
 
 #include "itkVtkData.h"
 
+//solo per il minimo
+#include <algorithm>
 
 /*
 * Il costruttore inizializza a null tutti i puntatori
@@ -232,7 +234,9 @@ bool itkVtkData::open(wxArrayString *pPaths, bool read)
 			strcpy(pTmp, test.GetPath());
 			dicomSeriesFileNames->SetDirectory(pTmp);
 
-			dicomSeriesFileNames->SetFileNameSortingOrderToSortBySliceLocation();
+			// ORDINAMENTO PER IMAGE POSITION
+			dicomSeriesFileNames->SetFileNameSortingOrderToSortByImagePositionPatient();
+
 			//itkReader->SetFileNames(fileNames);
 			itkReader->SetFileNames(dicomSeriesFileNames->GetFileNames());
 			itkReader->SetImageIO(itkDicomIO);
@@ -644,7 +648,10 @@ bool itkVtkData::openSeries(string fileName, bool read) {
 		}
 		if (fileNames.size()) {
 			dicomSeriesFileNames->SetDirectory(fileName.c_str());
-			dicomSeriesFileNames->SetFileNameSortingOrderToSortBySliceLocation();
+			
+			// ORDINAMENTO PER IMAGE POSITION
+			dicomSeriesFileNames->SetFileNameSortingOrderToSortByImagePositionPatient();
+			
 			//itkReader->SetFileNames(fileNames);
 			itkReader->SetFileNames(dicomSeriesFileNames->GetFileNames());
 			itkReader->SetImageIO(itkDicomIO);
@@ -1282,6 +1289,41 @@ int itkVtkData::getMaxPixelValue() {
 	double range[2];
 	_vtkImage->GetScalarRange(range);
 	return (int)range[1];
+}
+
+float itkVtkData::computeSamplingDistance(int value) 
+{	
+	double spacing[3]; 
+	_vtkImage->GetSpacing( spacing ); 
+	
+	float returnValue;
+	if (value==0) // massimo supersampling - minspacing / 8
+	{
+		returnValue = (float)((*std::min_element(spacing,spacing+3))/8.0);
+	}
+	else if (value==1) // medio supersampling - minspacing / 4
+	{
+		returnValue = (float)((*std::min_element(spacing,spacing+3))/4.0);
+	}
+	else if (value==2) // basso supersampling - minspacing / 2
+	{
+		returnValue = (float)((*std::min_element(spacing,spacing+3))/2.0);
+	}
+	else if (value==3) // ritorna il minimo valore dello spacing
+	{
+		returnValue = (float)*std::min_element(spacing,spacing+3);
+	}
+	else // ritorna un multiplo della diagonale del voxel ( diagonal * sqrt(value) con 2 <= value <= 5) 
+	{
+		value = value - 2;
+		double voxelDiagonal = sqrt( 
+			spacing[0] * spacing[0] + 
+			spacing[1] * spacing[1] + 
+			spacing[2] * spacing[2] ); 
+		returnValue = (float)(voxelDiagonal*sqrt((float)value));
+	}
+
+	return returnValue;
 }
 
 void itkVtkData::convertRgbToGrayVtkImage(bool deleteRgbImage) {

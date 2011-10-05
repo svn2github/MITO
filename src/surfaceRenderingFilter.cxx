@@ -19,7 +19,7 @@ surfaceRenderingFilter::surfaceRenderingFilter(unsigned int idData, dataHandler 
 surfaceRenderingFilter::~surfaceRenderingFilter() {
 }
 
-vtkActor *surfaceRenderingFilter::compute(float contourValue) {
+vtkActor *surfaceRenderingFilter::compute(float contourValue, double decimateValue, double smoothValue, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower, double* colourAmbient, double* colourDiffuse, double* colourSpecular ) {
 	if (isValidData()) {
 		vtkContourFilter *skinExtractor = vtkContourFilter::New();
 		skinExtractor->SetInput(getItkVtkData()->getVtkImage());
@@ -27,12 +27,12 @@ vtkActor *surfaceRenderingFilter::compute(float contourValue) {
 		
 		vtkDecimatePro* isoDeci = vtkDecimatePro::New();
 		isoDeci->SetInput( skinExtractor->GetOutput());
-		isoDeci->SetTargetReduction(0.5);
-		isoDeci->SetPreserveTopology( TRUE);
+		isoDeci->SetTargetReduction(decimateValue);
+		isoDeci->SetPreserveTopology(true);
 
 		vtkSmoothPolyDataFilter *smoother = vtkSmoothPolyDataFilter::New();
 		smoother->SetInput(isoDeci->GetOutput());
-		smoother->SetNumberOfIterations(20);
+		smoother->SetNumberOfIterations(smoothValue);
 		
 		vtkPolyDataNormals *skinNormals = vtkPolyDataNormals::New();
 		skinNormals->SetInput(smoother->GetOutput());
@@ -44,9 +44,14 @@ vtkActor *surfaceRenderingFilter::compute(float contourValue) {
 		
 		vtkActor *actor = vtkActor::New();
 		actor->SetMapper(skinMapper);
-		actor->GetProperty()->SetDiffuseColor(1, 1, 1);
-		actor->GetProperty()->SetSpecular(.3);
-		actor->GetProperty()->SetSpecularPower(20);
+		actor->GetProperty()->ShadingOn();
+		actor->GetProperty()->SetAmbientColor(colourAmbient[0], colourAmbient[1], colourAmbient[2]);
+		actor->GetProperty()->SetDiffuseColor(colourDiffuse[0], colourDiffuse[1], colourDiffuse[2]);
+		actor->GetProperty()->SetSpecularColor(colourSpecular[0], colourSpecular[1], colourSpecular[2]);
+		actor->GetProperty()->SetAmbient(shadingAmbient);
+		actor->GetProperty()->SetDiffuse(shadingDiffuse);
+		actor->GetProperty()->SetSpecular(shadingSpecular);
+		actor->GetProperty()->SetSpecularPower(shadingSpecularPower);
 		
 		isoDeci->Delete();
 		skinMapper->Delete();

@@ -415,8 +415,8 @@ void anonymizeFilter::anonymizeSeries(string inputDirectory, string outputDirect
 
 			DictionaryType* dictionary;
 			DictionaryArrayRawPointer dictionaryArray = reader->GetMetaDataDictionaryArray();
-			std::string entryId = "0028|1052";
-			std::string entryvalue = "0";
+			std::string entryId = "";
+			std::string entryvalue = "";
 
 			for(int i=0; i < dictionaryArray->size(); i++)  {
 				dictionary = dictionaryArray->at(i);
@@ -562,9 +562,11 @@ void anonymizeFilter::anonymizeSeries(string inputDirectory, string outputDirect
 					itk::EncapsulateMetaData<std::string>((*dictionary), entryId, entryvalue);
 				}
 
+				/*
 				entryId = RESCALE_INTERCEPT;
 				entryvalue = "0";
 				itk::EncapsulateMetaData<std::string>((*dictionary), entryId, entryvalue);
+				*/
 			}
 			
 			typedef short OutputPixelType;
@@ -621,8 +623,8 @@ void anonymizeFilter::anonymizeSeries(string inputDirectory, string outputDirect
 
 			DictionaryType* dictionary;
 			DictionaryArrayRawPointer dictionaryArray = reader->GetMetaDataDictionaryArray();
-			std::string entryId = "0028|1052";
-			std::string entryvalue = "0";
+			std::string entryId = "";
+			std::string entryvalue = "";
 
 			for(int i=0; i < dictionaryArray->size(); i++)  {
 				dictionary = dictionaryArray->at(i);
@@ -768,9 +770,9 @@ void anonymizeFilter::anonymizeSeries(string inputDirectory, string outputDirect
 					itk::EncapsulateMetaData<std::string>((*dictionary), entryId, entryvalue);
 				}
 
-				entryId = RESCALE_INTERCEPT;
-				entryvalue = "0";
-				itk::EncapsulateMetaData<std::string>((*dictionary), entryId, entryvalue);
+				//entryId = RESCALE_INTERCEPT;
+				//entryvalue = "0";
+				//itk::EncapsulateMetaData<std::string>((*dictionary), entryId, entryvalue);
 			}
 
 			const unsigned int OutputDimension = 2;

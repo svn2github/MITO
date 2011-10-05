@@ -69,11 +69,13 @@ void wxVtkViewer2d::showItkVtkData(itkVtkData *itkVtkData) {
 	else
 		SetInput(NULL);
 	setTextActor();
+
 	_iren->Render();
 
-	Renderer->ResetCamera();
 	nextSlice();
 	prevSlice();
+
+	Renderer->ResetCamera();
 	initialZoom = Renderer->GetActiveCamera()->GetParallelScale(); 
 
 	SetColorLevel(itkVtkData->getWl());

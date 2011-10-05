@@ -623,6 +623,14 @@ public:
 	int getMaxPixelValue();
 
 	/**
+	 * \fn float computeSamplingDistance()
+	 * \brief Determina il passo di campionamento a seconda dei dati in ingresso
+	 * \param value - valore intero tra 0 e 5 che determina il passo - 0 = best, 5 = worst
+	 * \return Passo di campionamento
+	 */
+	float computeSamplingDistance(int value);
+
+	/**
 	 * \fn string getImageViewPlane()
 	 * \brief Restituisce il piano di vista a partire dal quale è stata effettuata l'acquisizione
 	 * \return Valore massimo

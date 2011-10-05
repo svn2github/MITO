@@ -420,6 +420,10 @@ public:
 		return _slider;
 	}
 
+	void onInputMouse(wxCommandEvent& event);
+
+	void onInputKinect(wxCommandEvent& event);
+
 private:
 	DECLARE_EVENT_TABLE()
 };
@@ -443,6 +447,8 @@ enum {
 	tool_volumerendering,
 	tool_surface,
 	tool_mip,
+	tool_mouse,
+	tool_kinect,
 	//tool_minip,
 	tool_Max,
 	id_2dImageBox,

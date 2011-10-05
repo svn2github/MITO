@@ -16,6 +16,9 @@
 #include <wx/utils.h>
 #include <wx/busyinfo.h>
 
+#include <wx/gbsizer.h>
+
+
 #include "wx2dGui.h"
 #include "exportFilter.h"
 #include "flipFilter.h"
@@ -91,6 +94,9 @@ BEGIN_EVENT_TABLE(wx2dGui, wxFrame)
 	EVT_MENU(m_2d_HelpAbout,wx2dGui::onShowAboutDialog)	
 
 	EVT_CHECKBOX(id_2dAutoPlay, wx2dGui::onAutoPlay)
+
+	EVT_RADIOBUTTON(tool_mouse,wx2dGui::onInputMouse)
+	EVT_RADIOBUTTON(tool_kinect,wx2dGui::onInputKinect)
 
 	EVT_BUTTON(id_2dPlay,wx2dGui::onPlay)
 	EVT_BUTTON(id_2dStop,wx2dGui::onStop)
@@ -263,6 +269,54 @@ wx2dGui::wx2dGui(const wxString& title, const wxPoint& pos, const wxSize& size)
 	_toolBar->AddControl(albumButton);
 	currentHorizontalPosition=currentHorizontalPosition+albumButton->GetSize().GetWidth()-1;
 
+
+
+
+
+	//Contenitore raggruppante gli input device
+	currentHorizontalPosition=currentHorizontalPosition+30;	
+	wxStaticBox* shadingStaticBoxViewMode = new wxStaticBox(_toolBar, wxID_ANY, wxString("Input"),wxPoint(currentHorizontalPosition,altezzaButton-15),wxSize(75,53));
+	
+	wxPanel* inputDevicePanel = new wxPanel(_toolBar, wxID_ANY, wxPoint(currentHorizontalPosition,altezzaButton),wxSize(-1,-1));
+	inputDevicePanel->SetForegroundColour( *wxWHITE);
+
+	wxBoxSizer* inputDeviceBoxSizer = new wxBoxSizer(wxVERTICAL);	
+	wxGridBagSizer* inputDeviceGridBagSizer;
+	inputDeviceGridBagSizer = new wxGridBagSizer( 2, 2 );
+	inputDeviceGridBagSizer->SetFlexibleDirection( wxBOTH );
+	inputDeviceGridBagSizer->SetNonFlexibleGrowMode( wxFLEX_GROWMODE_NONE );
+
+	wxRadioButton* mouseRadioBtn = new wxRadioButton( inputDevicePanel, tool_mouse, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	mouseRadioBtn->SetValue( true );
+	inputDeviceGridBagSizer->Add( mouseRadioBtn, wxGBPosition( 0, 1 ), wxGBSpan( 1, 1 ), wxALL, 0 );
+	
+	wxStaticText* mouseStaticText = new wxStaticText( inputDevicePanel, wxID_ANY, wxT("Mouse"), wxDefaultPosition, wxDefaultSize, 0 );
+	mouseStaticText->Wrap( -1 );
+	mouseStaticText->SetForegroundColour( wxColour( 255, 255, 255 ) );
+	mouseStaticText->SetBackgroundColour( wxColour( 0, 0, 0 ) );
+	
+	inputDeviceGridBagSizer->Add( mouseStaticText, wxGBPosition( 0, 2 ), wxGBSpan( 1, 1 ), wxALL, 0 );
+	
+	wxRadioButton* kinectRadioBtn = new wxRadioButton( inputDevicePanel, tool_kinect, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+	kinectRadioBtn->Enable(false);
+	inputDeviceGridBagSizer->Add( kinectRadioBtn, wxGBPosition( 1, 1 ), wxGBSpan( 1, 1 ), wxALL, 0 );
+	
+	wxStaticText* kinectStaticText = new wxStaticText( inputDevicePanel, wxID_ANY, wxT("Kinect"), wxDefaultPosition, wxDefaultSize, 0 );
+	kinectStaticText->Wrap( -1 );
+	kinectStaticText->SetForegroundColour( wxColour( 255, 255, 255 ) );
+	kinectStaticText->SetBackgroundColour( wxColour( 0, 0, 0 ) );
+	
+	inputDeviceGridBagSizer->Add( kinectStaticText, wxGBPosition( 1, 2 ), wxGBSpan( 1, 1 ), wxALL, 0 );
+	
+	inputDeviceBoxSizer->Add( inputDeviceGridBagSizer, 0, 0, 0 );
+	inputDevicePanel->SetSizerAndFit( inputDeviceBoxSizer );
+	currentHorizontalPosition=currentHorizontalPosition+inputDevicePanel->GetSize().GetWidth();
+
+
+
+
+
+
 	
 	//Contenitore raggruppante i Mouse Functions Buttons
 	currentHorizontalPosition=currentHorizontalPosition+35;	
@@ -367,9 +421,9 @@ wx2dGui::wx2dGui(const wxString& title, const wxPoint& pos, const wxSize& size)
 
 	//Contenitore raggruppante i renderingButtons
 	currentHorizontalPosition=currentHorizontalPosition+45;	
-	wxStaticBox* renderingButtonsBox = new wxStaticBox(_toolBar, wxID_ANY, wxString("3D Rendering Techniques"), wxPoint(currentHorizontalPosition,altezzaButton-15),wxSize(150,53));
+	wxStaticBox* renderingButtonsBox = new wxStaticBox(_toolBar, wxID_ANY, wxString("VR Techniques"), wxPoint(currentHorizontalPosition,altezzaButton-15),wxSize(100,53));
 
-	currentHorizontalPosition=currentHorizontalPosition+40;
+	currentHorizontalPosition=currentHorizontalPosition+15;
 	wxBitmapButton* volumeRenderingButton = new wxBitmapButton( _toolBar, tool_volumerendering, toolBarBitmaps[tool_volumerendering], wxPoint(currentHorizontalPosition,altezzaButton), wxSize(31,31));
 	volumeRenderingButton->SetToolTip(_("Direct Volume Rendering"));
 	_toolBar->AddControl(volumeRenderingButton);
@@ -395,7 +449,7 @@ wx2dGui::wx2dGui(const wxString& title, const wxPoint& pos, const wxSize& size)
 	//currentHorizontalPosition=currentHorizontalPosition+MinIPButton->GetSize().GetWidth()-1;
 	//MinIPButton->Show(false);
 	
-	(_toolBar->FindControl(tool_all))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(tool_all))->SetBackgroundColour( wxColour(255,255,0) );
 
 	CreateStatusBar(3);
 	SetStatusText("Ready", 0);
@@ -812,8 +866,8 @@ void wx2dGui::onModifyWLWW(wxCommandEvent& event) {
 }
 
 void wx2dGui::onAll(wxCommandEvent& event) {
-	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_all))->GetBackgroundColour());
-	(_toolBar->FindControl(tool_all))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+	(_toolBar->FindControl(tool_all))->SetBackgroundColour( wxColour(255,255,0) );
 	_selectedButton = tool_all;
 	((appWxVtkInteractor*)_viewer2d->getWxWindow())->setInteractionType(all2d);
 	_viewer2d->removeRoiLengthAreaVolume();
@@ -822,8 +876,8 @@ void wx2dGui::onAll(wxCommandEvent& event) {
 }
 
 void wx2dGui::onWindowLevel(wxCommandEvent& event) {
-	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_windowlevel))->GetBackgroundColour());
-	(_toolBar->FindControl(tool_windowlevel))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+	(_toolBar->FindControl(tool_windowlevel))->SetBackgroundColour( wxColour(255,255,0) );
 	_selectedButton = tool_windowlevel;
 	((appWxVtkInteractor*)_viewer2d->getWxWindow())->setInteractionType(windowLevel2d);
 	_viewer2d->removeRoiLengthAreaVolume();
@@ -832,8 +886,8 @@ void wx2dGui::onWindowLevel(wxCommandEvent& event) {
 }
 
 void wx2dGui::onMove(wxCommandEvent& event) {
-	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_move))->GetBackgroundColour());
-	(_toolBar->FindControl(tool_move))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+	(_toolBar->FindControl(tool_move))->SetBackgroundColour( wxColour(255,255,0) );
 	_selectedButton = tool_move;
 	((appWxVtkInteractor*)_viewer2d->getWxWindow())->setInteractionType(move2d);
 	_viewer2d->removeRoiLengthAreaVolume();
@@ -842,8 +896,8 @@ void wx2dGui::onMove(wxCommandEvent& event) {
 }
 
 void wx2dGui::onZoom(wxCommandEvent& event) {
-	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_zoom))->GetBackgroundColour());
-	(_toolBar->FindControl(tool_zoom))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+	(_toolBar->FindControl(tool_zoom))->SetBackgroundColour( wxColour(255,255,0) );
 	_selectedButton = tool_zoom;
 	((appWxVtkInteractor*)_viewer2d->getWxWindow())->setInteractionType(zoom2d);
 	_viewer2d->removeRoiLengthAreaVolume();
@@ -852,8 +906,8 @@ void wx2dGui::onZoom(wxCommandEvent& event) {
 }
 
 void wx2dGui::onRotate(wxCommandEvent& event) {
-	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_rotate))->GetBackgroundColour());
-	(_toolBar->FindControl(tool_rotate))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+	(_toolBar->FindControl(tool_rotate))->SetBackgroundColour( wxColour(255,255,0) );
 	_selectedButton = tool_rotate;
 	((appWxVtkInteractor*)_viewer2d->getWxWindow())->setInteractionType(rotate2d);
 	_viewer2d->removeRoiLengthAreaVolume();
@@ -862,8 +916,8 @@ void wx2dGui::onRotate(wxCommandEvent& event) {
 }
 
 void wx2dGui::onAnimate(wxCommandEvent& event) {
-	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_animate))->GetBackgroundColour());
-	(_toolBar->FindControl(tool_animate))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+	(_toolBar->FindControl(tool_animate))->SetBackgroundColour( wxColour(255,255,0) );
 	_selectedButton = tool_animate;
 	((appWxVtkInteractor*)_viewer2d->getWxWindow())->setInteractionType(animate2d);
 	_viewer2d->removeRoiLengthAreaVolume();
@@ -872,8 +926,8 @@ void wx2dGui::onAnimate(wxCommandEvent& event) {
 }
 
 void wx2dGui::onLength(wxCommandEvent& event) {
-	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_length))->GetBackgroundColour());
-	(_toolBar->FindControl(tool_length))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+	(_toolBar->FindControl(tool_length))->SetBackgroundColour( wxColour(255,255,0) );
 	_selectedButton = tool_length;
 	roiManager* manager = ((appWxVtkInteractor*)_viewer2d->getWxWindow())->getRoiManager();
 	if(manager)
@@ -885,8 +939,8 @@ void wx2dGui::onLength(wxCommandEvent& event) {
 }
 
 void wx2dGui::onAngle(wxCommandEvent& event) {
-	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_angle))->GetBackgroundColour());
-	(_toolBar->FindControl(tool_angle))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+	(_toolBar->FindControl(tool_angle))->SetBackgroundColour( wxColour(255,255,0) );
 	_selectedButton = tool_angle;
 	roiManager* manager = ((appWxVtkInteractor*)_viewer2d->getWxWindow())->getRoiManager();
 	if(manager)
@@ -898,8 +952,8 @@ void wx2dGui::onAngle(wxCommandEvent& event) {
 }
 
 void wx2dGui::onPolygon(wxCommandEvent& event) {
-	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_polygon))->GetBackgroundColour());
-	(_toolBar->FindControl(tool_polygon))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+	(_toolBar->FindControl(tool_polygon))->SetBackgroundColour( wxColour(255,255,0) );
 	_selectedButton = tool_polygon;
 	roiManager* manager = ((appWxVtkInteractor*)_viewer2d->getWxWindow())->getRoiManager();
 	if(manager)
@@ -911,8 +965,8 @@ void wx2dGui::onPolygon(wxCommandEvent& event) {
 }
 
 void wx2dGui::onRectangle(wxCommandEvent& event) {
-	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_rectangle))->GetBackgroundColour());
-	(_toolBar->FindControl(tool_rectangle))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+	(_toolBar->FindControl(tool_rectangle))->SetBackgroundColour( wxColour(255,255,0) );
 	_selectedButton = tool_rectangle;
 	roiManager* manager = ((appWxVtkInteractor*)_viewer2d->getWxWindow())->getRoiManager();
 	if(manager)
@@ -924,8 +978,8 @@ void wx2dGui::onRectangle(wxCommandEvent& event) {
 }
 
 void wx2dGui::onPencil(wxCommandEvent& event) {
-	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_pencil))->GetBackgroundColour());
-	(_toolBar->FindControl(tool_pencil))->SetBackgroundColour(*wxCYAN);
+	(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+	(_toolBar->FindControl(tool_pencil))->SetBackgroundColour( wxColour(255,255,0) );
 	_selectedButton = tool_pencil;
 	roiManager* manager = ((appWxVtkInteractor*)_viewer2d->getWxWindow())->getRoiManager();
 	if(manager)
@@ -1156,7 +1210,7 @@ void wx2dGui::onVolumeRendering(wxCommandEvent& event) {
 
 		itkVtkData *_itkVtkData = new itkVtkData();
 
-		if(!_viewer2d->getItkVtkData()->getRgb()) {
+		if(!_viewer2d->getItkVtkData()->getRgb()) { // non RGB
 			try {
 				Duplicator::Pointer duplicator = Duplicator::New();
 				duplicator->SetInputImage(_viewer2d->getItkVtkData()->getItkImage());
@@ -1170,13 +1224,13 @@ void wx2dGui::onVolumeRendering(wxCommandEvent& event) {
 				_itkVtkData->setWl(_viewer2d->getItkVtkData()->getWl());
 				_itkVtkData->setWw(_viewer2d->getItkVtkData()->getWw());
 			}
-			catch(itk::ExceptionObject & e) {
+			catch(itk::ExceptionObject) {
 				delete _itkVtkData;
-				wxMessageBox(_T("Study too large for your hardware! Try with a smaller data set!!"));
+				wxMessageBox(_T("Study too large for your hardware! Try with a smaller data set"));
 				return;
 			}
 		}
-		else {
+		else { // RGB
 			try {
 				RGBDuplicator::Pointer duplicator = RGBDuplicator::New();
 				duplicator->SetInputImage(_viewer2d->getItkVtkData()->getItkRgbImage());
@@ -1190,9 +1244,9 @@ void wx2dGui::onVolumeRendering(wxCommandEvent& event) {
 				_itkVtkData->setWl(_viewer2d->getItkVtkData()->getWl());
 				_itkVtkData->setWw(_viewer2d->getItkVtkData()->getWw());
 			}
-			catch(itk::ExceptionObject & e) {
+			catch(itk::ExceptionObject) {
 				delete _itkVtkData;
-				wxMessageBox(_T("Study too large for your hardware! Try with a smaller data set!!"));
+				wxMessageBox(_T("Study too large for your hardware! Try with a smaller data set"));
 				return;
 			}
 		}
@@ -1209,75 +1263,22 @@ void wx2dGui::onVolumeRendering(wxCommandEvent& event) {
 		long ww = (long)_itkVtkData->getWw();
 		int clut = 0;
 
-		volumeRenderingFilter volumeRendering(newIdData, _mainGui->getDataHandler());
-		
-		// controlla se il 3D texture mapping è supportato dalla scheda grafica
-		bool is3DtextureSupported = volumeRendering.is3DtextureSupported();
-		g3d->set3DtextureSupported(is3DtextureSupported);
-		
-		
-		/*
-		//Operazioni richieste per visualizzare inizialmente in modalità VolumeRendering
-		if(!_viewer2d->getItkVtkData()->getRgb())
-			_itkVtkData->setVtkVolume(volumeRendering.compute(wl,ww,clut,_viewer2d->getItkVtkData()->getMinPixelValue()));
-		else
-			_itkVtkData->setVtkVolume(volumeRendering.computeRgb(wl,ww,clut));		
-		g3d->SetTitle(_T("MITO: 3D Volume Rendering"));
-		g3d->setRenderingTechnique(VolumeRendering);
-		*/
-		
-		
-		
-		//Operazioni richieste per visualizzare inizialmente in modalità TextureRendering		
-		if (!_viewer2d->getItkVtkData()->getRgb()) {
-			if (is3DtextureSupported) {	// se il 3D texture mapping è supportato lo usa, altrimenti usa il 2D texture mapping
-				_itkVtkData->setVtkVolume(volumeRendering.computeTextures3D(wl,ww,clut,_viewer2d->getItkVtkData()->getMinPixelValue(),0.5));
-				g3d->SetTitle(_T("MITO: 3D Texture Rendering"));
-			}		
-			else {	// se non è possibile usare texture 3D vengono usate le 2D
-				_itkVtkData->setVtkVolume(volumeRendering.computeTextures2D(wl,ww,clut,_viewer2d->getItkVtkData()->getMinPixelValue()));
-				g3d->SetTitle(_T("MITO: 2D Texture Rendering"));
-			}
-			g3d->setRenderingTechnique(VolumeTextureRendering);
-		}
-		else {
-			_itkVtkData->setVtkVolume(volumeRendering.computeRgb(wl,ww,clut));
-			g3d->SetTitle(_T("MITO: 3D Volume Fixed Point Rendering"));
-			g3d->setRenderingTechnique(VolumeFixedPointRendering);
-		}	
-		
+		int minPixelValue = _viewer2d->getItkVtkData()->getMinPixelValue();
 
-		// richiede la distanza dell'osservatore dallo schermo
-		/*const wxChar* PODChar;
-
-		do {
-			char message[60];
-			strcpy(message,"Set the distance from the screen in cm");
-			wxTextEntryDialog *dlg = new wxTextEntryDialog(this, message, "3D Volume Rendering", "200");
-			if (dlg->ShowModal() == wxID_OK) {
-				PODChar = dlg->GetValue().c_str();
-				dlg->Destroy();
-			}
-			else {
-				dlg->Destroy();
-				return;
-			}
-		} while(atoi(PODChar) < 10);*/
-
+		// inizializza il passo di campionamento
+		float sampleDistance = _viewer2d->getItkVtkData()->computeSamplingDistance(3); // 3 -> min spacing
+		g3d->setSampleDistance(sampleDistance);
 		g3d->setCLUT(clut);		
 		g3d->setIdViewer(idActiveViewer);
 		g3d->setIdData(newIdData);
 		g3d->setWlWw(wl,ww);
 
-		//g3d->setPOD(atoi(PODChar));
+		g3d->checkSuitableMappers();
 
 		g3d->show();
-		
+			
 		g3d->setInitialDistance();
 		g3d->setInitialProjectionValues();
-
-		// aggiunta per prova WII
-		//g3d->onWii(event);
 
 		_mainGui->viewTextData();
 
@@ -1308,9 +1309,9 @@ void wx2dGui::onSurfaceRendering(wxCommandEvent& event) {
 			_itkVtkData->setRgb(false);
 			if(_viewer2d->getItkVtkData()->getRgb()) _viewer2d->getItkVtkData()->convertGrayToRgbVtkImage(true);
 		}
-		catch(itk::ExceptionObject & e) {
+		catch(itk::ExceptionObject) {
 			delete _itkVtkData;
-			wxMessageBox(_T("Study too large for your hardware! Try with a smaller data set!!"));
+			wxMessageBox(_T("Study too large for your hardware! Try with a smaller data set"));
 			return;
 		}
 
@@ -1319,17 +1320,20 @@ void wx2dGui::onSurfaceRendering(wxCommandEvent& event) {
 
 		itkVtkData *_data = (itkVtkData*)_viewer2d->getItkVtkData();
 		do {
-			char min[10], max[10];
-
-			itoa(_data->getMinPixelValue(),min,10);
-			itoa(_data->getMaxPixelValue(),max,10);
+			int minValue = _data->getMinPixelValue()+1;
+			int maxValue = _data->getMaxPixelValue()-1;
+			int averageValue = (maxValue+minValue)/2;
+			char min[10], max[10], avg[10];
+			itoa(minValue,min,10);
+			itoa(maxValue,max,10);
+			itoa(averageValue,avg,10);
 			char message[60];
 			strcpy(message,"Set a contour value between ");
 			strcat(message,min);
 			strcat(message," and "),
 			strcat(message,max);
 			strcat(message,".");
-			wxTextEntryDialog *dlg = new wxTextEntryDialog(this, message, "3D Surface Rendering", "900");
+			wxTextEntryDialog *dlg = new wxTextEntryDialog(this, message, "3D Surface Rendering", avg);
 			if (dlg->ShowModal() == wxID_OK) {
 				contourChar = dlg->GetValue().c_str();
 				dlg->Destroy();
@@ -1339,7 +1343,7 @@ void wx2dGui::onSurfaceRendering(wxCommandEvent& event) {
 
 				return;
 			}
-			if(atoi(contourChar) < _data->getMinPixelValue() || atoi(contourChar) > _data->getMaxPixelValue()) {
+			if(atoi(contourChar) < minValue || atoi(contourChar) > maxValue ) {
 				wxMessageDialog* messDialog = new wxMessageDialog(this, _T("Contour value wrong! Set another value."), _T("MITO"), wxOK | wxICON_INFORMATION);
 				if (messDialog->ShowModal()==wxID_OK)
 					messDialog->Destroy();
@@ -1350,15 +1354,21 @@ void wx2dGui::onSurfaceRendering(wxCommandEvent& event) {
 		wxSurfaceRenderingGui *g3d = new wxSurfaceRenderingGui(_T("MITO: 3D Surface Rendering"), wxPoint(0, 0), wxGetClientDisplayRect().GetSize());		
 		_mainGui->new3dViewer(g3d->new3dViewer(_mainGui));
 
+		g3d->setMinPixel( _data->getMinPixelValue() );
+		g3d->setMaxPixel( _data->getMaxPixelValue() );
+
 		idActiveViewer = _mainGui->getActiveViewer();
 		unsigned int newIdData = _mainGui->getDataHandler()->newData(_itkVtkData, idActiveViewer, false);
 
+
+		/*
 		surfaceRenderingFilter f(newIdData, _mainGui->getDataHandler());
 		_itkVtkData->setVtkActor(f.compute(atoi(contourChar)));
+		*/
 
 		g3d->setIdViewer(idActiveViewer);
 		g3d->setIdData(newIdData);
-		g3d->show();
+		g3d->show( atoi(contourChar), 0.5, 20 );
 		g3d->setInitialDistance();
 		g3d->setInitialProjectionValues();
 		
@@ -1419,36 +1429,21 @@ void wx2dGui::onMaximumIntensityProjection(wxCommandEvent& event) {
 		long ww = (long)_itkVtkData->getWw();
 		int clut = 0;
 
+		// inizializza il passo di campionamento
+		float sampleDistance = _viewer2d->getItkVtkData()->computeSamplingDistance(3); // 3 -> min spacing
+		g3d->setSampleDistance(sampleDistance);
+
 		mipFilter mip(newIdData, _mainGui->getDataHandler());
 		if(!_viewer2d->getItkVtkData()->getRgb())
-			_itkVtkData->setVtkVolume(mip.compute(wl, ww, clut, g3d->getMinPixel(), true));
+			_itkVtkData->setVtkVolume( mip.compute(wl, ww, clut, g3d->getMinPixel(), true, sampleDistance, false, 0.5, 0.6, 0.2, 0.5) );
 		else
-			_itkVtkData->setVtkVolume(mip.computeRgb(wl, ww, clut, true));
-
-		// richiede la distanza dell'osservatore dallo schermo
-		/*const wxChar* PODChar;
-
-		do {
-			char message[60];
-			strcpy(message,"Set the distance from the screen in cm");
-			wxTextEntryDialog *dlg = new wxTextEntryDialog(this, message, "3D Volume Rendering", "200");
-			if (dlg->ShowModal() == wxID_OK) {
-				PODChar = dlg->GetValue().c_str();
-				dlg->Destroy();
-			}
-			else {
-				dlg->Destroy();
-				return;
-			}
-		} while(atoi(PODChar) < 10);*/
+			_itkVtkData->setVtkVolume( mip.computeRgb(wl, ww, clut, true, sampleDistance, false, 0.5, 0.6, 0.2, 0.5) );
 
 		g3d->setCLUT(clut);
 		g3d->setRenderingTechnique(MIP);
 		g3d->setIdViewer(idActiveViewer);
 		g3d->setIdData(newIdData);
 		g3d->setWlWw(wl,ww);
-
-		//g3d->setPOD(atoi(PODChar));
 
 		g3d->show();
 		
@@ -1463,7 +1458,6 @@ void wx2dGui::onMaximumIntensityProjection(wxCommandEvent& event) {
 			messDialog->Destroy();
 	}
 }
-
 
  /*
  void wx2dGui::onMinimumIntensityProjection(wxCommandEvent& event) {
@@ -1561,8 +1555,8 @@ void wx2dGui::onConnectedThreshold(wxCommandEvent& event) {
 	unsigned int idData = _mainGui->getViewer(_idViewer)->getActiveIdSingleData();
 	if (idData) {
 		if(!((itkVtkData*)(_mainGui->getDataHandler()->getData(idData)))->getRgb()) {
-			(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_connectedthreshold))->GetBackgroundColour());
-			(_toolBar->FindControl(tool_connectedthreshold))->SetBackgroundColour(*wxCYAN);
+			(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+			(_toolBar->FindControl(tool_connectedthreshold))->SetBackgroundColour( wxColour(255,255,0) );
 			_selectedButton = tool_connectedthreshold;
 			((appWxVtkInteractor*)_viewer2d->getWxWindow())->setInteractionType(connectedThreshold2d);
 			roiManager* manager = ((appWxVtkInteractor*)_viewer2d->getWxWindow())->getRoiManager();
@@ -1594,8 +1588,8 @@ void wx2dGui::onNeighborhoodConnected(wxCommandEvent& event) {
 	unsigned int idData = _mainGui->getViewer(_idViewer)->getActiveIdSingleData();
 	if (idData) {
 		if(!((itkVtkData*)(_mainGui->getDataHandler()->getData(idData)))->getRgb()) {
-			(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_neighborhoodconnected))->GetBackgroundColour());
-			(_toolBar->FindControl(tool_neighborhoodconnected))->SetBackgroundColour(*wxCYAN);
+			(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+			(_toolBar->FindControl(tool_neighborhoodconnected))->SetBackgroundColour( wxColour(255,255,0) );
 			_selectedButton = tool_neighborhoodconnected;
 			((appWxVtkInteractor*)_viewer2d->getWxWindow())->setInteractionType(neighborhoodConnected2d);
 			roiManager* manager = ((appWxVtkInteractor*)_viewer2d->getWxWindow())->getRoiManager();
@@ -1626,8 +1620,8 @@ void wx2dGui::onConfidenceConnected(wxCommandEvent& event) {
 	unsigned int idData = _mainGui->getViewer(_idViewer)->getActiveIdSingleData();
 	if (idData) {
 		if(!((itkVtkData*)(_mainGui->getDataHandler()->getData(idData)))->getRgb()) {
-			(_toolBar->FindControl(_selectedButton))->SetBackgroundColour((_toolBar->FindControl(tool_confidenceconnected))->GetBackgroundColour());
-			(_toolBar->FindControl(tool_confidenceconnected))->SetBackgroundColour(*wxCYAN);
+			(_toolBar->FindControl(_selectedButton))->SetBackgroundColour(wxNullColour);
+			(_toolBar->FindControl(tool_confidenceconnected))->SetBackgroundColour( wxColour(255,255,0) );
 			_selectedButton = tool_confidenceconnected;
 			((appWxVtkInteractor*)_viewer2d->getWxWindow())->setInteractionType(confidenceConnected2d);
 			roiManager* manager = ((appWxVtkInteractor*)_viewer2d->getWxWindow())->getRoiManager();
@@ -1683,18 +1677,30 @@ void wx2dGui::onQuit(wxCloseEvent& event) {
 }
 
 void wx2dGui::onShowAboutDialog(wxCommandEvent& WXUNUSED(event)) {
-	const wxString name = "MITO";
-	const wxString version = "1.0 Beta";
-	const wxString copyright = "(C) 2006-2009 Institute for High Performance Computing and Networking (ICAR-CNR), Naples Branch";
+	const wxString name = "MITO - Medical imaging toolkit";
+	const wxString version = "2.0";
+	const wxString copyright = "(C) 2006-2011 Institute for High Performance Computing and Networking of the National Research Council of Italy (ICAR-CNR), Naples Branch";
 	const wxString conjunction = "Institute of Biostructure and Bioimaging (IBB-CNR)";
-	const wxString hyperlink = "<http://amico.icar.cnr.it/>";
+	const wxString hyperlink = "<http://ihealthlab.icar.cnr.it/>";
+	const wxString hyperlink2 = "<http://amico.icar.cnr.it/>";
 
 	wxString msg;
     msg << name;
     msg << _(" Version ") << version << _T('\n');
     msg << copyright << _T('\n');
 	msg << _("in conjunction with ") << conjunction << _T('\n');
-    msg << hyperlink;
+    msg << hyperlink << _T('\n');
+	msg << hyperlink2;
 
     wxMessageBox(msg, _T("About ") + name);
+}
+
+void wx2dGui::onInputMouse(wxCommandEvent& event) {
+	int i=0;
+	i=i+1;
+}
+
+void wx2dGui::onInputKinect(wxCommandEvent& event) {
+	int i=0;
+	i=i+1;
 }

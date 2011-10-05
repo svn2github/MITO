@@ -85,17 +85,6 @@ private:
 	 */
 	wxCheckBox * _checkCLUT;
 
-	/** 
-	 * \var wxChoice * _waveletTypeChoice
-	 * \brief Lista contenente i vari tipi di wavelet
-	 */
-	wxChoice * _waveletTypeChoice;
-
-	/** 
-	 * \var wxComboBox * _choiceRule
-	 * \brief Menù a tendina contenente i nomi delle varie tecniche di fusione
-	 */
-	wxComboBox * _choiceRule;
 
 	/** 
 	 * \var int _idSel1
@@ -191,14 +180,6 @@ public:
 
 
 	/** 
-	 * \brief Ritorna il tipo di wavelet da utilizzare per la fusione
-	 *
-	 * \return Tipo di wavelet da utilizzare per la fusione
-	 */
-	inline fusionFilter::WaveletType getWaveletType() {
-		return _waveletType;
-	}
-	/** 
 	 * \brief Ritorna il peso per la prima immagine o serie scelta per la fusione.
 	 *
 	 * \return Peso per la prima immagine o serie scelta per la fusione
@@ -235,6 +216,15 @@ public:
 	}
 
 	/** 
+	 * \brief Ritorna il tipo di wavelet da utilizzare per la fusione
+	 *
+	 * \return Tipo di wavelet da utilizzare per la fusione
+	 */
+	inline fusionFilter::WaveletType getWaveletType() {
+		return _waveletType;
+	}
+
+	/** 
 	 * \brief Ritorna un valore booleano che indica se applicare o meno la CLUT
 	 *
 	 * \return Valore booleano che indica se applicare o meno la CLUT
@@ -260,15 +250,6 @@ private:
 	 */
 	void onSetIdData2( wxCommandEvent& event );
 
-	/** 
-	 * \brief Metodo invocato per settare lla regola di fusione
-	 */
-	void onFusionRule( wxCommandEvent& event );
-
-	/** 
-	 * \brief Metodo invocato per settare il tipo di wavelet
-	 */
-	void onWaveletType( wxCommandEvent& event );
 
 	/** 
 	 * \brief Metodo invocato quando viene premuto il pulsante OK
@@ -304,11 +285,7 @@ enum {
 	setIdData2_button,
 	weight_slider,
 	ok_buttonFusion,
-	cancel_buttonFusion,
-	choiceRule,
-	waveletTypeChoice,
-	levelChoice
-
+	cancel_buttonFusion
 };
 
 #endif _wxFusionDialog_h_

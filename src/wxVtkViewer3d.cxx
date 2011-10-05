@@ -6,10 +6,16 @@
 
 #include "wxVtkViewer3d.h"
 #include "vtkTextProperty.h"
+#include "vtkMitoCustomCamera.h"
 
 
 wxVtkViewer3d::wxVtkViewer3d(wxWindow *parent, wxWindowID id) : wxVtkViewer(parent,parent, id) {
 	_ren = vtkRenderer::New();
+
+	// add the custom camera
+	vtkMitoCustomCamera* camera = vtkMitoCustomCamera::New();
+    _ren->SetActiveCamera(camera);
+
 	_rWin = vtkRenderWindow::New();
 
 	// render window stereoscopica
@@ -32,6 +38,11 @@ wxVtkViewer3d::wxVtkViewer3d(wxWindow *parent, wxWindowID id) : wxVtkViewer(pare
 
 wxVtkViewer3d::wxVtkViewer3d(wxWindow *parent, wxWindow *gui, wxWindowID id) : wxVtkViewer(parent, gui, id) {
 	_ren = vtkRenderer::New();
+
+	// add the custom camera
+	vtkMitoCustomCamera* camera = vtkMitoCustomCamera::New();
+    _ren->SetActiveCamera(camera);
+
 	_rWin = vtkRenderWindow::New();
 	
 	// render window stereoscopica

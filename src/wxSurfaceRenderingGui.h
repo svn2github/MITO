@@ -185,7 +185,13 @@ class wxSurfaceRenderingGui : public wxFrame {
 	 */
 	void destroy3DAxes();
 
-
+	double	_shadingAmbient;
+	double	_shadingDiffuse;
+	double	_shadingSpecular;
+	double	_shadingSpecularPower;
+	wxColour _shadingColourAmbient;
+	wxColour _shadingColourDiffuse;
+	wxColour _shadingColourSpecular;
 
 public:
 
@@ -195,12 +201,37 @@ public:
 	/** Distruttore */
 	~wxSurfaceRenderingGui();
 
+	inline wxColour getShadingColourAmbient() {
+		return _shadingColourAmbient;
+	}
+
+	inline wxColour getShadingColourDiffuse() {
+		return _shadingColourDiffuse;
+	}
+
+	inline wxColour getShadingColourSpecular() {
+		return _shadingColourSpecular;
+	}
+
+	inline void setShadingColourAmbient(wxColour shadingColourAmbient) {
+		_shadingColourAmbient = shadingColourAmbient;
+	}
+
+	inline void setShadingColourDiffuse(wxColour shadingColourDiffuse) {
+		_shadingColourDiffuse = shadingColourDiffuse;
+	}
+
+	inline void setShadingColourSpecular(wxColour shadingColourSpecular) {
+		_shadingColourSpecular = shadingColourSpecular;
+	}
+
+
 	/**
 	* \fn void show(unsigned int idData)
 	* \brief Metodo che mostra la finestra contenente il visualizzatore
 	* \param idData L'identificativo del dato da visualizzare
 	*/
-	void show();
+	void show(float contourValue, double decimateValue, double smoothValue);
 
 	/**
 	* \fn void CreateSurfaceToolbar()
@@ -300,13 +331,6 @@ public:
 	void onEyeAngle(wxCommandEvent& event);
 
 	/**
-	* \fn void onProjectionType(wxCommandEvent& event)
-	* \brief Imposta il tipo di proiezione
-	* \param event Evento
-	*/
-	void onProjectionType(wxCommandEvent& event);
-
-	/**
 	* \fn void onCursorType(wxCommandEvent& event)
 	* \brief Imposta il tipo di cursore 2D/3D
 	* \param event Evento
@@ -321,17 +345,18 @@ public:
 	void onStereoModeAnaglyph(wxCommandEvent& event);
 
 	/**
-	* \fn void onProjectionType(wxCommandEvent& event)
+	* \fn void onStereoModeActivePassive(wxCommandEvent& event)
 	* \brief Imposta la modalità stereoscopica per schede grafiche quad-buffered
 	* \param event Evento
 	*/
 	void onStereoModeActivePassive(wxCommandEvent& event);
-	
+
 	/**
-	* \fn void updateStereoView()
-	* \brief aggiorna eye angle e parallax della camera
+	* \fn void onStereoModeCheckerboard(wxCommandEvent& event)
+	* \brief Imposta la modalità stereoscopica Checkerboard
+	* \param event Evento
 	*/
-	//void updateStereoView();	
+	void onStereoModeCheckerboard(wxCommandEvent& event);
 
 	/**
 	* \fn void updateStereoView(bool doARender)
@@ -339,13 +364,6 @@ public:
 	* \param doARender richiede o meno un render
 	*/
 	void updateStereoView(bool doARender = false);
-
-	/**
-	* \fn void updateStereoView()
-	* \brief aggiorna eye angle e parallax della camera in base al valore dy
-	* \param dy offset tra Y attuale e precedente del mouse
-	*/
-	void updateStereoView(int dy);
 
 	/**
 	* \fn void setInitialDistance()
@@ -372,6 +390,8 @@ public:
 	* \param event Evento
 	*/
 	void onProjectionTypePerspective(wxCommandEvent& event);
+
+	void onProjectionTypeEndoscopy(wxCommandEvent& event);
 
 	/**
 	* \fn void onResetView(wxCommandEvent& event)
@@ -463,7 +483,7 @@ public:
 	* \brief Modifica la distanza tra osservatore e schermo
 	* \param event Evento
 	*/
-	void wxSurfaceRenderingGui::onModifyObserverDistance(wxCommandEvent& event);
+	void onModifyObserverDistance(wxCommandEvent& event);
 
 	/**
 	* \fn void onClose(wxCommandEvent& event)
@@ -592,21 +612,6 @@ public:
 	*/
 	void show3DAxes();
 
-
-	/**
-	* \fn void setPOD(int POD)
-	* \brief Setta la distanza tra osservatore e schermo
-	* \param POD Distanza
-	*/
-	void setPOD(int POD);
-
-	/**
-	* \fn int getPOD()
-	* \brief Ottiene la distanza tra osservatore e schermo
-	* \return Distanza
-	*/
-	int getPOD();
-
 	/**
 	* \fn int set3DCursorRGBColor(double R, double G, double B)
 	* \brief setta il colore del cursore 3D
@@ -614,9 +619,100 @@ public:
 	*/
 	void set3DCursorRGBColor(double R, double G, double B);
 
+	void updateShading(double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower);
+
+	void onChangeShadingParameters(wxCommandEvent& event);
+
+	void computeSurfaceRendering(float contourValue, double decimateValue, double smoothValue);
+
+	inline void getShadingValues(double &ambient, double &diffuse, double &specular, double &specularPower) {
+		ambient = _shadingAmbient;
+		diffuse = _shadingDiffuse;
+		specular = _shadingSpecular;
+		specularPower = _shadingSpecularPower;
+	}
+
+	inline void getDecimateSmoothingValues(double &decimate, double &smooth) {
+		decimate = _decimateValue;
+		smooth = _smoothValue;
+	}
+
+
+	/**
+	* \fn void setMinPixel(unsigned int minPixel)
+	* \brief Assegna la minima intensità del pixel
+	* \param minPixel Minima intensità del pixel
+	*/
+	inline void setMinPixel(unsigned int minPixel) {
+		_minPixel = minPixel;
+	}
+
+	/**
+	* \fn void setMaxPixel(unsigned int maxPixel)
+	* \brief Assegna la massima intensità del pixel
+	* \param maxPixel Massima intensità del pixel
+	*/
+	inline void setMaxPixel(unsigned int maxPixel) {
+		_maxPixel = maxPixel;
+	}
+
+	/**
+	* \fn int getMinPixel()
+	* \brief Restituisce la minima intensità del pixel
+	* \return Minima intensità del pixel
+	*/
+	inline int getMinPixel() {
+		return _minPixel;
+	}
+
+	/**
+	* \fn int getMaxPixel()
+	* \brief Restituisce la massima intensità del pixel
+	* \return Massima intensità del pixel
+	*/
+	inline int getMaxPixel() {
+		return _maxPixel;
+	}
+
+	inline float getContourValue() {
+		return _contourValue;
+	}
+
+	inline void setContourValue(float contourValue) {
+		_contourValue = contourValue;
+	}
+
+	inline void setPOD(int POD) {
+		_POD = POD;
+	}
+
+	inline int getPOD() {
+		return _POD;
+	}
+
 private:
 		
 	DECLARE_EVENT_TABLE()
+
+	/** 
+	 * \var int _minPixel
+	 * \brief Minima intensità dei pixel
+	 */
+	int _minPixel;
+
+	/** 
+	 * \var int _maxPixel
+	 * \brief Massima intensità dei pixel
+	 */
+	int _maxPixel;
+
+	float _contourValue;
+	double _decimateValue;
+	double _smoothValue;
+
+	double _initialOrientation[3];
+	double _initialScale[3];
+	double _initialPosition[3];
 
 };
 
@@ -626,14 +722,11 @@ enum {
 	id3d_rotateTool,
 	id3d_moveTool,
 	id3d_3drotTool,
-
-	// Wii
 	id3d_WiiTool,
 	id3d_WiiConfigurationTool,
 	id3d_WiiChangeSceneIRInteraction,
 	id3d_ModifyCDRatioFunction,
 	id3d_ModifyMotionFactor,
-
 	id3d_AxialTool,
 	id3d_CorTool,
 	id3d_SagTool,
@@ -641,26 +734,26 @@ enum {
 	id3d_surfaceToolbar3D,
 	id3d_fileCloseWindow,
 	id3d_3dviewerSurface,
+	id3d_RADIOBUTTONGROUPInputDevice1,
+	id3d_RADIOBUTTONGROUPInputDevice2,
+	id3d_stereo,
+	id3d_perspective,
+	id3d_parallel,
+	id3d_endoscopy,
+	id3d_RADIOBOXProjectionType,
+	id3d_RADIOBUTTONGROUPCursorType1,
+	id3d_RADIOBUTTONGROUPCursorType2,
+	id3d_shadingChangeButton,
+	id3d_shadingAmbientText,
+	id3d_shadingSpecularText,
+	id3d_shadingDiffuseText,
+	id3d_contourValueText,
+	id3d_HelpAbout,
 	m_3d_3dviewerResetToInitialView,
 	m_3d_3dviewerCoronalView,
 	m_3d_3dviewerLeftSagittalView,
 	m_3d_3dviewerRightSagittalView,
 	m_3d_3dviewerAxialView,
-	//id3d_COMBOBOXZoom,
-
-	id3d_RADIOBUTTONGROUPInputDevice1,
-	id3d_RADIOBUTTONGROUPInputDevice2,
-
-	id3d_RADIOBUTTONGROUPStereoMode1,
-	id3d_RADIOBUTTONGROUPStereoMode2,
-
-	id3d_RADIOBOXProjectionType,
-	
-	id3d_RADIOBUTTONGROUPCursorType1,
-	id3d_RADIOBUTTONGROUPCursorType2,
-
-	//id3d_SLIDER1,
-	id3d_HelpAbout,
 	m_3d_3dviewerFullScreen,
 	m_3d_CorTool,
 	m_3d_SagTool,
@@ -673,14 +766,12 @@ enum {
 	m_3d_MoveSR,
 	m_3d_RotateAroundSR,
 	m_3d_Mouse_Button_FunctionSR,
-	m_3d_ParallelProjectionType,
-	m_3d_PerspectiveProjectionType,
-	m_3d_ProjectionType,
 	m_3d_StereoMode,
 	m_3d_StereoModeOff,
 	m_3d_StereoModeOn,
 	m_3d_StereoModeAnaglyph,
 	m_3d_StereoModeActivePassive,
+	m_3d_StereoModeCheckerboard,
 	m_3d_ModifyObserverDistance
 };
 

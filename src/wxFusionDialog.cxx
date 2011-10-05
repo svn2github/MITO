@@ -18,24 +18,30 @@ BEGIN_EVENT_TABLE(wxFusionDialog, wxDialog)
 	EVT_BUTTON (cancel_buttonFusion, wxFusionDialog::onCancelDown)
 	EVT_COMMAND_SCROLL(weight_slider, wxFusionDialog::onScroll)
 	EVT_RADIOBOX(fusionType_radioBox, wxFusionDialog::onFusionType)
-	EVT_COMBOBOX(choiceRule, wxFusionDialog::onFusionRule)
-	EVT_CHOICE(waveletTypeChoice, wxFusionDialog::onWaveletType)
-	EVT_CHOICE(levelChoice, wxFusionDialog::onLivelloDec)
+	//EVT_COMBOBOX(choiceRule, wxFusionDialog::onFusionRule)
+	//EVT_CHOICE(waveletTypeChoice, wxFusionDialog::onWaveletType)
+	//EVT_CHOICE(levelChoice, wxFusionDialog::onLivelloDec)
 
 END_EVENT_TABLE()
 
 const wxString algoTypeArray [] = {"Aritmethic (faster)", "Wavelet (slower)"};
 
 
-wxFusionDialog::wxFusionDialog(wxWindow* win) : wxDialog(win, -1, "Image Fusion Settings", wxDefaultPosition, wxSize(770, 480)) {
+wxFusionDialog::wxFusionDialog(wxWindow* win) : wxDialog(win, -1, "Image Fusion Settings", wxDefaultPosition, wxSize(550, 480)) {
 	_fusionType = new wxRadioBox(this, fusionType_radioBox, "Fusion algorithm", wxPoint(10, 10), wxDefaultSize, 2, algoTypeArray, 0, wxRA_SPECIFY_COLS);
-	_listIdData = new wxListBox(this, -1, wxPoint(10, 80), wxSize(200, 200), 0, NULL, wxLB_HSCROLL|wxLB_NEEDED_SB);
+	_listIdData = new wxListBox(this, -1, wxPoint(10, 80), wxSize(230, 200), 0, NULL, wxLB_HSCROLL|wxLB_NEEDED_SB);
 	
+	_ruleType = fusionFilter::Consistenza_var;
+	_waveletType = 2;
+	_level = 1;
+
+
+/*
 	wxArrayString rules;
-	//rules.Add("Complete Detail Substitution");
+	rules.Add("Complete Detail Substitution");
 	rules.Add("Mean/Modulus Max");
 	rules.Add("Mean/Modulus Max + Consistency Verification");
-	//rules.Add("Variance/Modulus Max + Consistency Verification");
+	rules.Add("Variance/Modulus Max + Consistency Verification");
 	
 	wxArrayString waveletType;
 	waveletType.Add("haar");
@@ -53,15 +59,6 @@ wxFusionDialog::wxFusionDialog(wxWindow* win) : wxDialog(win, -1, "Image Fusion 
 	wxStaticText * labelLevel = new wxStaticText(this, -1, "Select decomposition level", wxPoint(600, 180), wxDefaultSize); 
 	_levelChoice->SetSelection(0);
 
-	wxStaticText * label1 = new wxStaticText(this, -1, "Select CT image/series", wxPoint(220, 80), wxDefaultSize); 
-	wxButton* _setIdData1 = new wxButton(this, setIdData1_button, ">", wxPoint(220, 100), wxSize(30, 20));
-	_textIdData1 = new wxTextCtrl(this, -1, "", wxPoint(260, 100), wxSize(200, 20));
-
-	wxStaticText * label2 = new wxStaticText(this, -1, "Select PET image/series", wxPoint(220, 180), wxDefaultSize);
-	wxButton* _setIdData2 = new wxButton(this, setIdData2_button, ">", wxPoint(220, 200), wxSize(30, 20));
-	_textIdData2 = new wxTextCtrl(this, -1, "", wxPoint(260, 200), wxSize(200, 20));
-	_checkCLUT = new wxCheckBox(this, -1, "Apply CLUT", wxPoint(260, 230), wxDefaultSize);
-
 	_choiceRule = new wxComboBox(this, choiceRule,"", wxPoint(500, 100), wxSize(250, 50), rules, wxCB_READONLY,wxDefaultValidator,"Fusion Rule" );
 	_choiceRule->SetSelection(fusionFilter::Consistenza_media);
 	wxStaticText * labelRules = new wxStaticText(this, -1, "Select fusion rule", wxPoint(500, 80), wxDefaultSize);
@@ -71,17 +68,26 @@ wxFusionDialog::wxFusionDialog(wxWindow* win) : wxDialog(win, -1, "Image Fusion 
 	_waveletTypeChoice->SetSelection(2);
 	wxStaticText * waveletTypeText = new wxStaticText(this, -1, "Select Wavelet", wxPoint(500, 180), wxDefaultSize); 
 	 _waveletType = 2;
+*/
+	wxStaticText * label1 = new wxStaticText(this, -1, "Select CT data", wxPoint(260, 80), wxDefaultSize); 
+	wxButton* _setIdData1 = new wxButton(this, setIdData1_button, ">", wxPoint(260, 100), wxSize(30, 20));
+	_textIdData1 = new wxTextCtrl(this, -1, "", wxPoint(300, 100), wxSize(230, 20));
 
-	wxStaticText * label3 = new wxStaticText(this, -1, "Weight first image/series", wxPoint(130, 300));
-	wxStaticText * label4 = new wxStaticText(this, -1, "Weight second image/series", wxPoint(505, 300));
+	wxStaticText * label2 = new wxStaticText(this, -1, "Select PET data", wxPoint(260, 180), wxDefaultSize);
+	wxButton* _setIdData2 = new wxButton(this, setIdData2_button, ">", wxPoint(260, 200), wxSize(30, 20));
+	_textIdData2 = new wxTextCtrl(this, -1, "", wxPoint(300, 200), wxSize(230, 20));
+	_checkCLUT = new wxCheckBox(this, -1, "Apply CLUT", wxPoint(300, 230), wxDefaultSize);
 
-	_pesoData1 = new wxTextCtrl(this, -1, "0.5", wxPoint(165, 320), wxSize(50, 20), wxTE_READONLY);
-	_slideWeight = new wxSlider(this, weight_slider, 50, 1, 99, wxPoint(225, 320), wxSize(300, 20), wxSL_HORIZONTAL | wxSL_AUTOTICKS);
+	wxStaticText * label3 = new wxStaticText(this, -1, "CT weight", wxPoint(66, 300));
+	wxStaticText * label4 = new wxStaticText(this, -1, "PET weight", wxPoint(431, 300));
+
+	_pesoData1 = new wxTextCtrl(this, -1, "0.5", wxPoint(65, 320), wxSize(50, 20), wxTE_READONLY);
+	_slideWeight = new wxSlider(this, weight_slider, 25, 1, 99, wxPoint(125, 320), wxSize(300, 20), wxSL_HORIZONTAL | wxSL_AUTOTICKS);
 	_slideWeight->SetTickFreq(2,1);
-	_pesoData2 = new wxTextCtrl(this, -1, "0.5", wxPoint(535, 320), wxSize(50, 20), wxTE_READONLY);
+	_pesoData2 = new wxTextCtrl(this, -1, "0.5", wxPoint(435, 320), wxSize(50, 20), wxTE_READONLY);
 
-	wxButton * ok = new wxButton(this, ok_buttonFusion, "OK", wxPoint(215, 385), wxSize(150, 30));
-	wxButton * cancel = new wxButton(this, cancel_buttonFusion, "Cancel", wxPoint(385, 385), wxSize(150, 30));
+	wxButton * ok = new wxButton(this, ok_buttonFusion, "OK", wxPoint(115, 385), wxSize(150, 30));
+	wxButton * cancel = new wxButton(this, cancel_buttonFusion, "Cancel", wxPoint(285, 385), wxSize(150, 30));
 
 	onScroll(wxScrollEvent());
 	onFusionType(wxCommandEvent());
@@ -97,31 +103,31 @@ void wxFusionDialog::onSetIdData2( wxCommandEvent& event ) {
 	_textIdData2->SetValue(_listIdData->GetStringSelection());
 }
 
-
+/*
 void wxFusionDialog::onFusionRule( wxCommandEvent& event ) {
 	int rul = _choiceRule->GetSelection();
 	switch (rul) {
-		/*case 0:
-			_ruleType = fusionFilter::Sostituzione_dettaglio;
+		//case 0:
+		//	_ruleType = fusionFilter::Sostituzione_dettaglio;
 			//_levelChoice->Enable();
-			break;
-		case 1:
-			_ruleType = fusionFilter::Modulo_max;
+		//	break;
+		//case 1:
+		//	_ruleType = fusionFilter::Modulo_max;
 			//_levelChoice->SetSelection(0);
 			//_levelChoice->Disable();
 			
-			break;
-		case 2:
-			_ruleType = fusionFilter::Consistenza_media;
+		//	break;
+		//case 2:
+		//	_ruleType = fusionFilter::Consistenza_media;
 			//_levelChoice->SetSelection(0);
 			//_levelChoice->Disable();
-			break;
-		case 3:
-			_ruleType = fusionFilter::Consistenza_var;
+		//	break;
+		//case 3:
+		//	_ruleType = fusionFilter::Consistenza_var;
 			//_levelChoice->SetSelection(0);
 			//_levelChoice->Disable();
-			break;
-		*/
+		//	break;
+
 		
 		case 0:
 			_ruleType = fusionFilter::Modulo_max;
@@ -145,8 +151,9 @@ void wxFusionDialog::onLivelloDec( wxCommandEvent& event ) {
 
 void wxFusionDialog::onWaveletType( wxCommandEvent& event ) {
 	 _waveletType = _waveletTypeChoice->GetSelection();
-	
 }
+*/
+
 void wxFusionDialog::onOkDown( wxCommandEvent& event ) {
 	if(strcmp(_textIdData1->GetValue().c_str(),"") && strcmp(_textIdData2->GetValue().c_str(),"")) {
 		_peso1 = atof(_pesoData1->GetValue());
@@ -199,16 +206,10 @@ void wxFusionDialog::onFusionType(wxCommandEvent& event) {
 	switch (index) {
 		case 0:
 			_algoType = fusionFilter::media_pesata;
-			_choiceRule->Disable();
-			_waveletTypeChoice->Disable();
-			_levelChoice->Disable();
 
 			break;
 		case 1:
 			_algoType = fusionFilter::wavelet;
-			_choiceRule->Enable();
-			_waveletTypeChoice->Enable();
-			_levelChoice->Enable();
 
 			break;
 	}

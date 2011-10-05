@@ -8,7 +8,7 @@
 #define _volumeRenderingFilter_h
 
 #include "itkVtkFilter.h"
-
+#include <vtkRenderer.h>
 
 /** 
  * \class volumeRenderingFilter
@@ -31,7 +31,7 @@ public:
 	 * \param minPixel Minimo valore dei pixel dell'immagine
 	 * \return Il volume ricostruito
 	 */
-	vtkVolume* compute(long wl, long ww, int clut, int minPixel);
+	vtkVolume* compute(long wl, long ww, int clut, int minPixel, float sampleDistance, bool shading, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower);
 
 	/**
 	 * \fn vtkVolume* computeRgb(long wl, long ww, int clut, int minPixel)
@@ -42,7 +42,7 @@ public:
 	 * \param minPixel Minimo valore dei pixel dell'immagine
 	 * \return Il volume ricostruito
 	 */
-	vtkVolume* computeRgb(long wl, long ww, int clut);
+	vtkVolume* computeRgb(long wl, long ww, int clut, float sampleDistance, bool shading, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower);
 
 	/**
 	 * \fn vtkVolume* computeTextures3D(long wl, long ww, int clut, int minPixel, double sampleDistance)
@@ -51,10 +51,22 @@ public:
 	 * \param ww Definisce il window width
 	 * \param clut Indica che tipo di CLUT applicare al volume
 	 * \param minPixel Minimo valore dei pixel dell'immagine
-	 * \param sampleDistance Minimo valore dei pixel dell'immagine
+	 * \param sampleDistance Passo di campionamento
 	 * \return Il volume ricostruito
 	 */
-	vtkVolume* computeTextures3D(long wl, long ww, int clut, int minPixel, float sampleDistance);
+	vtkVolume* computeTextures3D(long wl, long ww, int clut, int minPixel, float sampleDistance, bool shading, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower);
+
+	/**
+	 * \fn vtkVolume* computeGPU(long wl, long ww, int clut, int minPixel, double sampleDistance)
+	 * \brief Esegue il volume ray-casting GPU based
+	 * \param wl Definisce il window level
+	 * \param ww Definisce il window width
+	 * \param clut Indica che tipo di CLUT applicare al volume
+	 * \param minPixel Minimo valore dei pixel dell'immagine
+	 * \param sampleDistance passo di campionamento
+	 * \return Il volume ricostruito
+	 */
+	vtkVolume* computeGPU(long wl, long ww, int clut, int minPixel, float sampleDistance, bool shading, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower, int availableVRAM);
 
 	/**
 	 * \fn vtkVolume *computeFixedPoint(long wl, long ww, int clut, int minPixel)
@@ -65,7 +77,7 @@ public:
 	 * \param minPixel Minimo valore dei pixel dell'immagine
 	 * \return Il volume ricostruito
 	 */
-	vtkVolume *computeFixedPoint(long wl, long ww, int clut, int minPixel);
+	vtkVolume *computeFixedPoint(long wl, long ww, int clut, int minPixel, float sampleDistance, bool shading, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower);
 
 	/**
 	 * \fn vtkVolume* computeTextures2D(long wl, long ww, int clut, int minPixel)
@@ -76,15 +88,18 @@ public:
 	 * \param minPixel Minimo valore dei pixel dell'immagine
 	 * \return Il volume ricostruito
 	 */
-	vtkVolume* computeTextures2D(long wl, long ww, int clut, int minPixel);
+	vtkVolume* computeTextures2D(long wl, long ww, int clut, int minPixel, bool shading, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower);
 
 	/**
 	 * \fn bool volumeRenderingFilter::is3DtextureSupported()
 	 * \brief restituisce true se il 3d texture mapping è supportato
 	 * \return true o false
 	 */
-	bool is3DtextureSupported();
+	bool is3DtextureSupported(vtkRenderer *renderer);
 
+	bool isGPUraycastingSupported(vtkRenderWindow *renderWindow);
+
+	int computeAvailableGPUMemory();
 };
 
 #endif _volumeRenderingFilter_h

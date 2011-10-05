@@ -18,6 +18,9 @@
 #include <wx/busyinfo.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 
+#include <vtkRendererCollection.h>
+#include "WiiCommandEvents.h"
+
 BEGIN_EVENT_TABLE(appWxVtkInteractor, wxVTKRenderWindowInteractor)
     //EVT_TIMER(-1, appWxVtkInteractor::OnFocusTimer)
 	//EVT_LEAVE_WINDOW(appWxVtkInteractor::OnLeave)
@@ -53,7 +56,7 @@ appWxVtkInteractor::appWxVtkInteractor(wxWindow* parent, wxWindowID id, viewerHa
 
 	// frame rate impostato a renderingRate
 	this->SetDesiredUpdateRate(renderingRate);
-	this->SetStillUpdateRate(renderingRate*0.1);
+	this->SetStillUpdateRate(0.0001);
 
 	// frame rate tale da lasciare il volume sempre al massimo della definizione
 	//this->SetDesiredUpdateRate(this->GetStillUpdateRate());
@@ -370,16 +373,20 @@ void appWxVtkInteractor::OnButtonUp(wxMouseEvent &event) {
 			if (_3dTechnique==VolumeRendering) {
 				wxVolumeRenderingGui* wxVRGui = ((wxVolumeRenderingGui*)wxGetTopLevelParent(this));
 				wxVRGui->hide3DAxes();
-				int x=0,y=0;
-				wxVRGui->get3DCursorDisplayPosition(x,y,true);
-				wxVRGui->WarpPointer(x,y);								
+				if (_3DCursorEnabled) {
+					int x=0,y=0;
+					wxVRGui->get3DCursorDisplayPosition(x,y,true);
+					wxVRGui->WarpPointer(x,y);								
+				}
 			}
 			else if (_3dTechnique==SurfaceRendering) {
 				wxSurfaceRenderingGui* wxSRGui = ((wxSurfaceRenderingGui*)wxGetTopLevelParent(this));
 				wxSRGui->hide3DAxes();
-				int x=0,y=0;
-				wxSRGui->get3DCursorDisplayPosition(x,y,true);
-				wxSRGui->WarpPointer(x,y);								
+				if (_3DCursorEnabled) {
+					int x=0,y=0;
+					wxSRGui->get3DCursorDisplayPosition(x,y,true);
+					wxSRGui->WarpPointer(x,y);								
+				}
 			}
 		}
 
@@ -519,7 +526,7 @@ void appWxVtkInteractor::OnMotion(wxMouseEvent &event)
 				wxVRGui->get_viewer3d()->updateViewer();
 			}
 		}
-		else if (event.LeftIsDown())
+		else if (event.LeftIsDown() && ( _interactionType == rotateAround3dSR || _interactionType == rotateAround3d ) )
 			{				
 				if (_3dTechnique == VolumeRendering)
 				{
@@ -777,7 +784,12 @@ void appWxVtkInteractor::OnMotion(wxMouseEvent &event)
 		}
 		_actualPoint = event.GetPosition();	
 	}
-	else if( event.Dragging()&& (_interactionType == length2d || _interactionType == angle2d ||_interactionType == rectangle2d || _interactionType == polygon2d || _interactionType == pencil2d)) {
+	else if( event.Dragging() && (	_interactionType == length2d 
+								||	_interactionType == angle2d 
+								||	_interactionType == rectangle2d 
+								||  _interactionType == polygon2d 
+								||	_interactionType == pencil2d ) ) 
+	{
 		unsigned int idViewer = _viewerHandler->getActiveViewer();
 		wxVtkViewer2d* viewer2d = ((wxVtkViewer2d*)(_viewerHandler->getViewer(idViewer)->getViewerDrawing()));
 		int x = viewer2d->getCurrentX();
@@ -812,482 +824,41 @@ void appWxVtkInteractor::OnMotion(wxMouseEvent &event)
 		}
 		viewer2d->updateViewer();
 	}
-	else if(event.Dragging() && (_interactionType == windowLevel3d)) {
+	else if( event.Dragging() && (_interactionType == windowLevel3d)) 
+	{
 		wxWindow* window = wxGetTopLevelParent(this);
 		wxVolumeRenderingGui* g3d = (wxVolumeRenderingGui*)window;
+		unsigned int idViewer = _viewerHandler->getActiveViewer();
+		unsigned int _idData = _viewerHandler->getViewer(idViewer)->getActiveIdSingleData();
 
 		_wlWwModified = true;
 
+		// INIZIO CALCOLO WL e WW
 		long startWW = _ww, startWL = _wl;
 		float WWAdapter;
 		
 		WWAdapter = startWW / 200.0;
+		if (WWAdapter < 0.1) WWAdapter = 0.1;
 		
 		_wl = (long)(startWL + (long)(_actualPoint.y - event.GetPosition().y)*WWAdapter);
 		_ww = (long)(startWW + (long)(event.GetPosition().x - _actualPoint.x)*WWAdapter);
-		if(_ww < 1) _ww = 1;
+
+		int minWL = ( (itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData) )->getMinPixelValue();
+		int maxWL = ( (itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData) )->getMaxPixelValue();
+
+		if		(_wl < minWL)	_wl = minWL;
+		else if	(_wl > maxWL)	_wl = maxWL;
+
+		long maxWW = 2*abs(maxWL - _wl);
+		if ( 2*abs(_wl - minWL) > maxWW )
+			maxWW = 2*abs(_wl - minWL);
+
+		if		(_ww < 2)		_ww = 2;
+		else if	(_ww > maxWW)	_ww = maxWW;
+		// FINE CALCOLO WL e WW
 
 		g3d->setWlWw(_wl,_ww);
-
-		unsigned int idViewer = _viewerHandler->getActiveViewer();
-		unsigned int _idData = _viewerHandler->getViewer(idViewer)->getActiveIdSingleData();
-
-		if(!((itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData))->getRgb()) {
-			// LUIGI - non deve essere eseguita per 3D texture mapping e fixedpoint
-			if (g3d->getRenderingTechnique() != VolumeTextureRendering &&
-				g3d->getRenderingTechnique() != VolumeFixedPointRendering )
-				((vtkVolumeRayCastMapper*)((itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData))->getVtkVolume()->GetMapper())->SetMinimumImageSampleDistance(6);
-
-			vtkPiecewiseFunction *opacityTransferFunction = vtkPiecewiseFunction::New();
-			vtkColorTransferFunction *colorTransferFunction = vtkColorTransferFunction::New();
-			
-			int minPixel = ((itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData))->getMinPixelValue();
-			//int maxPixel = ((itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData))->getMaxPixelValue();
-
-			int shiftValue = 0;
-			if( minPixel < 0 ) 
-				shiftValue =(-1)*(minPixel);
-
-			/*if(g3d->getRenderingTechnique()) {
-				int shiftValue = 0;
-				
-				if( minPixel < 0 )  {
-					shiftValue =(-1)*(minPixel);
-					minPixel = 0 ;
-					maxPixel = maxPixel + shiftValue ;
-				}
-
-				opacityTransferFunction->AddPoint(minPixel,(_wl-_ww/2)/256);
-				opacityTransferFunction->AddPoint(maxPixel,(_wl+_ww/2)/256);
-				colorTransferFunction->AddRGBPoint(minPixel,(_wl-_ww/2)/256,(_wl-_ww/2)/256,(_wl-_ww/2)/256);
-				colorTransferFunction->AddRGBPoint(maxPixel,(_wl+_ww/2)/256,(_wl+_ww/2)/256,(_wl+_ww/2)/256);
-			}
-			else {*/
-				/*double alpha[256];
-				for(int i = 0; i < 256; i++)
-				{
-					alpha[i] = i / 255.;
-				}*/
-
-			float start = shiftValue + _wl - _ww/2, end = shiftValue + _wl + _ww/2;
-			//opacityTransferFunction->RemoveAllPoints();
-			opacityTransferFunction->AddPoint(start, 0);
-			opacityTransferFunction->AddPoint(end, 1);
-
-			double table[256][3];
-			if(_clut == 0) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = i / 255.;
-					table[i][1] = i / 255.;
-					table[i][2] = i / 255.;
-				}
-			}
-			else if(_clut == 1) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = BlackBody_Red[i] / 255.;
-					table[i][1] = BlackBody_Green[i] / 255.;
-					table[i][2] = BlackBody_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 2) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = Cardiac_Red[i] / 255.;
-					table[i][1] = Cardiac_Green[i] / 255.;
-					table[i][2] = Cardiac_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 3) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = Flow_Red[i] / 255.;
-					table[i][1] = Flow_Green[i] / 255.;
-					table[i][2] = Flow_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 4) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = GEColor_Red[i] / 255.;
-					table[i][1] = GEColor_Green[i] / 255.;
-					table[i][2] = GEColor_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 5) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = GrainRainbow_Red[i] / 255.;
-					table[i][1] = GrainRainbow_Green[i] / 255.;
-					table[i][2] = GrainRainbow_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 6) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = HotIron_Red[i] / 255.;
-					table[i][1] = HotIron_Green[i] / 255.;
-					table[i][2] = HotIron_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 7) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = NIH_Red[i] / 255.;
-					table[i][1] = NIH_Green[i] / 255.;
-					table[i][2] = NIH_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 8) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = Spectrum_Red[i] / 255.;
-					table[i][1] = Spectrum_Green[i] / 255.;
-					table[i][2] = Spectrum_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 9) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = VRBones_Red[i] / 255.;
-					table[i][1] = VRBones_Green[i] / 255.;
-					table[i][2] = VRBones_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 10) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = VRMusclesBones_Red[i] / 255.;
-					table[i][1] = VRMusclesBones_Green[i] / 255.;
-					table[i][2] = VRMusclesBones_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 11) {
-				for(int i = 0; i < 256; i++)
-				{
-					table[i][0] = VRRedVessels_Red[i] / 255.;
-					table[i][1] = VRRedVessels_Green[i] / 255.;
-					table[i][2] = VRRedVessels_Blue[i] / 255.;
-				}
-			}
-
-			//opacityTransferFunction->BuildFunctionFromTable(_wl-_ww/2, _wl+_ww/2, 255, (double*) &alpha);
-			colorTransferFunction->BuildFunctionFromTable(shiftValue + _wl-_ww/2, shiftValue + _wl+_ww/2, 255, (double*) &table);
-
-			//Creo un set di proprietà per il volume con varie opzioni
-			vtkVolumeProperty *volumeProperty = vtkVolumeProperty::New();
-			volumeProperty->SetScalarOpacity(opacityTransferFunction);
-			volumeProperty->SetColor(colorTransferFunction);
-			volumeProperty->SetInterpolationTypeToLinear();
-			//if(g3d->getRenderingTechnique()) {			
-			//	volumeProperty->ShadeOn();
-			//}
-			
-			// LUIGI - non deve essere eseguita per 3D texture mapping e fixedpoint
-			if (g3d->getRenderingTechnique() != VolumeTextureRendering && 
-				g3d->getRenderingTechnique() != VolumeFixedPointRendering )
-				((vtkVolumeRayCastMapper*)((itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData))->getVtkVolume()->GetMapper())->SetMinimumImageSampleDistance(1.5);
-			
-			((itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData))->getVtkVolume()->SetProperty(volumeProperty);
-			((itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData))->getVtkVolume()->Update();
-
-			opacityTransferFunction->Delete();
-			colorTransferFunction->Delete();
-			volumeProperty->Delete();
-		}
-		else {
-			((vtkFixedPointVolumeRayCastMapper*)((itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData))->getVtkVolume()->GetMapper())->SetMinimumImageSampleDistance(6);
-
-			vtkPiecewiseFunction *opacityTransferFunction = vtkPiecewiseFunction::New();
-			
-			float start = _wl - _ww/2, end = _wl + _ww/2;
-			opacityTransferFunction->AddPoint(start, 0);
-			opacityTransferFunction->AddPoint(end, 1);
-
-			double tableRed[256][3];
-			double tableGreen[256][3];
-			double tableBlue[256][3];
-
-			if(_clut == 0) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = i / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = i / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = i / 255.;
-				}
-			}
-			else if(_clut == 1) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = BlackBody_Red[i] / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = BlackBody_Green[i] / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = BlackBody_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 2) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = Cardiac_Red[i] / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = Cardiac_Green[i] / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = Cardiac_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 3) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = Flow_Red[i] / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = Flow_Green[i] / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = Flow_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 4) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = GEColor_Red[i] / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = GEColor_Green[i] / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = GEColor_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 5) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = GrainRainbow_Red[i] / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = GrainRainbow_Green[i] / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = GrainRainbow_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 6) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = HotIron_Red[i] / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = HotIron_Green[i] / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = HotIron_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 7) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = NIH_Red[i] / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = NIH_Green[i] / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = NIH_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 8) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = Spectrum_Red[i] / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = Spectrum_Green[i] / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = Spectrum_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 9) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = VRBones_Red[i] / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = VRBones_Green[i] / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = VRBones_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 10) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = VRMusclesBones_Red[i] / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = VRMusclesBones_Green[i] / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = VRMusclesBones_Blue[i] / 255.;
-				}
-			}
-			else if(_clut == 11) {
-				for(int i = 0; i < 256; i++)
-				{
-					tableRed[i][0] = VRRedVessels_Red[i] / 255.;
-					tableRed[i][1] = 0.;
-					tableRed[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableGreen[i][0] = 0.;
-					tableGreen[i][1] = VRRedVessels_Green[i] / 255.;
-					tableGreen[i][2] = 0.;
-				}
-				for(int i = 0; i < 256; i++)
-				{
-					tableBlue[i][0] = 0.;
-					tableBlue[i][1] = 0.;
-					tableBlue[i][2] = VRRedVessels_Blue[i] / 255.;
-				}
-			}
-
-			vtkColorTransferFunction *red = vtkColorTransferFunction::New();
-			red->BuildFunctionFromTable(_wl-_ww/2, _wl+_ww/2, 255, (double*)&tableRed);
-			
-			vtkColorTransferFunction *green = vtkColorTransferFunction::New();
-			green->BuildFunctionFromTable(_wl-_ww/2, _wl+_ww/2, 255, (double*)&tableGreen);
-			
-			vtkColorTransferFunction *blue = vtkColorTransferFunction::New();
-			blue->BuildFunctionFromTable(_wl-_ww/2, _wl+_ww/2, 255, (double*)&tableBlue);
-
-			vtkVolumeProperty *volumeProperty = vtkVolumeProperty::New();
-			volumeProperty->IndependentComponentsOn();
-			volumeProperty->SetColor(0,red);
-			volumeProperty->SetColor(1,green);
-			volumeProperty->SetColor(2,blue);
-
-			volumeProperty->SetScalarOpacity(0,opacityTransferFunction);
-			volumeProperty->SetScalarOpacity(1,opacityTransferFunction);
-			volumeProperty->SetScalarOpacity(2,opacityTransferFunction);
-
-			volumeProperty->SetComponentWeight(3, 0);
-			volumeProperty->SetInterpolationTypeToLinear();
-
-			//By Nello if(g3d->getRenderingTechnique() == MIP || g3d->getRenderingTechnique() == MinIP) {
-			if(g3d->getRenderingTechnique()) {
-				volumeProperty->ShadeOn();
-
-			}
-			((vtkFixedPointVolumeRayCastMapper*)((itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData))->getVtkVolume()->GetMapper())->SetMinimumImageSampleDistance(1.5);
-
-			((itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData))->getVtkVolume()->SetProperty(volumeProperty);
-			((itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData))->getVtkVolume()->Update();
-
-			opacityTransferFunction->Delete();
-			red->Delete();
-			green->Delete();
-			blue->Delete();
-			volumeProperty->Delete();
-		}
+		g3d->computeOpacityColor();
 
 		_actualPoint = event.GetPosition();
 		this->Render();
@@ -1331,40 +902,48 @@ void appWxVtkInteractor::OnMotion(wxMouseEvent &event)
 		WiiManagerStarted = true;		
 	}
 	*/
-	else 
+	else if (	event.LeftIsDown() && (
+				_interactionType == all2d 
+			|| 	_interactionType == windowLevel2d ) )
 	{	
+		unsigned int idViewer = _viewerHandler->getActiveViewer();
+		unsigned int _idData = _viewerHandler->getViewer(idViewer)->getActiveIdSingleData();		
+		
+		this->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->DrawOff();
+
 		wxVTKRenderWindowInteractor::OnMotion(event);
 		_parent->GetEventHandler()->ProcessEvent(event);		
 
-		
-		unsigned int idViewer = _viewerHandler->getActiveViewer();
-		if(idViewer != 0) {
-			wxVtkViewer2d* viewer2d = ((wxVtkViewer2d*)(_viewerHandler->getViewer(idViewer)->getViewerDrawing()));
+		// Controllo estremi WL e WW
+		int minWL = ( (itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData) )->getMinPixelValue();
+		int maxWL = ( (itkVtkData*)_viewerHandler->getDataHandler()->getData(_idData) )->getMaxPixelValue();
 
-			wxWindow* window = viewer2d->getWxWindow();
-			while(!(window->IsTopLevel())){
-				if(window->GetParent())
-					window = window->GetParent();
-			}
+		long wl = ((wxVtkViewer2d*)(_viewerHandler->getViewer(idViewer)->getViewerDrawing()))->GetColorLevel();
+		long ww = ((wxVtkViewer2d*)(_viewerHandler->getViewer(idViewer)->getViewerDrawing()))->GetColorWindow();
 
-			//by Nello
-			if (event.GetWheelRotation()!=0 ) {
-				if(strcmp(typeid(*window).name(),"class wxMainGui")==0) 
-					((wxMainGui*)window)->getSlider()->SetFocus();		
-				else if(strcmp(typeid(*window).name(),"class wx2dGui")==0) 
-					((wx2dGui*)window)->getSlider()->SetFocus();		
-			}
+		if		(wl < minWL)	wl = minWL;
+		else if	(wl > maxWL)	wl = maxWL;
 
-			//if(strcmp(typeid(*window).name(),"class wxMainGui")==0) 
-			//{
-				// Mod. A. Placitelli per temporizzare il focus
-			//	m_focusTimer->Start (500, wxTIMER_ONE_SHOT);
-			//}
-			//else if(strcmp(typeid(*window).name(),"class wx2dGui")==0) 
-			//	((wx2dGui*)window)->getSlider()->SetFocus();		
-		}	
-		
-	}	
+		long maxWW = 2*abs(maxWL - wl);
+		if ( 2*abs(wl - minWL) > maxWW )
+			maxWW = 2*abs(wl - minWL);
+
+		if		(ww < 2)		ww = 2;
+		else if	(ww > maxWW)	ww = maxWW;
+
+		((wxVtkViewer2d*)(_viewerHandler->getViewer(idViewer)->getViewerDrawing()))->SetColorLevel(wl);
+		((wxVtkViewer2d*)(_viewerHandler->getViewer(idViewer)->getViewerDrawing()))->SetColorWindow(ww);
+
+		this->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->DrawOn();
+		// FINE CONTROLLO
+
+		this->Render();
+	}
+	else
+	{
+		wxVTKRenderWindowInteractor::OnMotion(event);
+		_parent->GetEventHandler()->ProcessEvent(event);	
+	}
 }
 
 void appWxVtkInteractor::OnLeaveWindow(wxMouseEvent &event) 
@@ -1463,7 +1042,11 @@ void appWxVtkInteractor::dummyMethod()
 	InvokeEvent(vtkCommand::LeftButtonPressEvent, NULL);
 	InvokeEvent(vtkCommand::LeftButtonReleaseEvent, NULL);
 }
-
+void appWxVtkInteractor::dummyMethodRight() 
+{
+	InvokeEvent(vtkCommand::RightButtonPressEvent, NULL);
+	InvokeEvent(vtkCommand::RightButtonReleaseEvent, NULL);
+}
 //----------------------------------------------- Wiimote ---------------------------------------------------------	
 wxWiiManager* appWxVtkInteractor::getWiiManager(wxVtkViewer3d* viewer3d)
 {
@@ -2280,7 +1863,7 @@ void appWxVtkInteractor::onWiiMotionIR( wxWiimoteEvent & event)
 
 				if ( thisWii->isOnSurface ) {
 					thisWii->pointer->SetPosition(point[0], point[1], point[2]);
-					thisWii->pointer->GetProperty()->SetColor(0,1,0);
+					thisWii->pointer->GetProperty()->SetColor(1,1,0);
 				}
 				// puntatore fuori dalla superficie - colore rosso
 				else {	                
@@ -2292,7 +1875,7 @@ void appWxVtkInteractor::onWiiMotionIR( wxWiimoteEvent & event)
 					GetInteractorStyle()->ComputeDisplayToWorld( WiiManager->renderer, x, y, focalDepth, newPosition);
 
 					thisWii->pointer->SetPosition( newPosition[0], newPosition[1], newPosition[2]);
-					thisWii->pointer->GetProperty()->SetColor(1,0,0);
+					thisWii->pointer->GetProperty()->SetColor(1,1,1);
 				}
 			}
 					
@@ -3110,7 +2693,7 @@ void appWxVtkInteractor::onWiiMotionIR( wxWiimoteEvent & event)
 			if ( thisWii->isOnSurface )
 			{
 				thisWii->pointer->SetPosition(point[0], point[1], point[2]);
-				thisWii->pointer->GetProperty()->SetColor(0,1,0);
+				thisWii->pointer->GetProperty()->SetColor(1,1,0);
 			}
 			else
 			{	                
@@ -3122,7 +2705,7 @@ void appWxVtkInteractor::onWiiMotionIR( wxWiimoteEvent & event)
 				GetInteractorStyle()->ComputeDisplayToWorld( WiiManager->renderer, x, y, focalDepth, newPosition);
 
 				thisWii->pointer->SetPosition( newPosition[0], newPosition[1], newPosition[2]);
-				thisWii->pointer->GetProperty()->SetColor(1,0,0);
+				thisWii->pointer->GetProperty()->SetColor(1,1,1);
 			}
 	
 			{

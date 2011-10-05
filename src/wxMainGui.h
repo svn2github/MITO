@@ -667,6 +667,7 @@ enum {
 	Tool_queryretrieve,
 	Tool_export,
 	Tool_anonymizer,
+	Tool_imageFusion,
 	Tool_send,
 	Tool_viewer,
 	Tool_volumerendering,

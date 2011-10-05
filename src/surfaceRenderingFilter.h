@@ -28,7 +28,7 @@ public:
 	* \param contourValue Isovalore a partire dal quale creare le isosuperfici
 	* \return Il modello volumetrico
 	*/
-	vtkActor* compute(float contourValue);
+	vtkActor* compute(float contourValue, double decimateValue, double smoothValue, double shadingAmbient, double shadingDiffuse, double shadingSpecular, double shadingSpecularPower, double* colourAmbient, double* colourDiffuse, double* colourSpecular );
 };
 
 #endif _surfaceRenderingFilter_h_
