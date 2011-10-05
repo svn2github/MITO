@@ -1,0 +1,2 @@
+MITO ICON "icons/MITO.ico"
+#include "wx/msw/wx.rc"
