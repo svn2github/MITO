@@ -1154,12 +1154,28 @@ void wxVolumeRenderingGui::show3DCursor()
 {
 	if (_3DCursor == NULL) return;
 
+	/*
+	appWxVtkInteractor* appWxVtkI = ((appWxVtkInteractor*)_viewer3d->getWxWindow());			
+	vtkMitoInteractorStyleTrackball *style = vtkMitoInteractorStyleTrackball::New();
+	//vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
+	appWxVtkI->SetInteractorStyle(style);
+	style->Delete();	
+	*/
+
 	_3DCursor->VisibilityOn();
 	((appWxVtkInteractor*)_viewer3d->getWxWindow())->set3DcursorCanMove(true);
 }
 void wxVolumeRenderingGui::hide3DCursor()
 {
 	if (_3DCursor == NULL) return;
+
+	/*
+	appWxVtkInteractor* appWxVtkI = ((appWxVtkInteractor*)_viewer3d->getWxWindow());			
+	//vtkMitoInteractorStyleTrackball *style = vtkMitoInteractorStyleTrackball::New();
+	vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
+	appWxVtkI->SetInteractorStyle(style);
+	style->Delete();	
+	*/
 
 	_3DCursor->VisibilityOff();
 }

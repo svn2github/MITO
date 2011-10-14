@@ -120,7 +120,7 @@ void vtkMitoInteractorStyleTrackball::Rotate()
 
 //----------------------------------------------------------------------------
 void vtkMitoInteractorStyleTrackball::Spin()
-{
+{/*
   if ( this->CurrentRenderer == NULL )
     {
     return;
@@ -133,6 +133,46 @@ void vtkMitoInteractorStyleTrackball::Spin()
 
   vtkCamera *camera = this->CurrentRenderer->GetActiveCamera();
   camera->Roll( angle);
+  camera->OrthogonalizeViewUp();
+      
+  rwi->Render();*/
+
+
+  if ( this->CurrentRenderer == NULL )
+    {
+    return;
+    }
+
+  vtkRenderWindowInteractor *rwi = this->Interactor;
+
+
+  int dx = rwi->GetEventPosition()[0] - rwi->GetLastEventPosition()[0];
+  int dy = rwi->GetEventPosition()[1] - rwi->GetLastEventPosition()[1];
+  
+  int *size = this->CurrentRenderer->GetRenderWindow()->GetSize();
+
+  double *center = this->CurrentRenderer->GetCenter();
+
+  double newAngle = 
+    vtkMath::DegreesFromRadians( atan2( rwi->GetEventPosition()[1] - center[1],
+                                        rwi->GetEventPosition()[0] - center[0] ) );
+
+  double oldAngle = 
+    vtkMath::DegreesFromRadians( atan2( rwi->GetLastEventPosition()[1] - center[1],
+                                        rwi->GetLastEventPosition()[0] - center[0] ) );
+
+  vtkCamera *camera = this->CurrentRenderer->GetActiveCamera();
+
+  // by Nello 
+  // Se rilevo una variazione maggiore della metà dello schermo la ignoro
+  if (abs(dx)>(size[0]/2.0)) {
+	 return;
+  }
+  else if (abs(dy)>(size[1]/2.0)) {
+	return;
+  }
+
+  camera->Roll( newAngle - oldAngle );
   camera->OrthogonalizeViewUp();
       
   rwi->Render();

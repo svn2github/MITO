@@ -369,7 +369,7 @@ void appWxVtkInteractor::OnButtonUp(wxMouseEvent &event) {
 		wxVTKRenderWindowInteractor::OnButtonUp(event);
 		_parent->GetEventHandler()->ProcessEvent(event);
 	}
-	else if(_interactionType == rotateAround3d || _interactionType == rotateAround3dSR) {
+	else if(_interactionType == rotateAround3d || _interactionType == rotateAround3dSR || _interactionType == rotate3d) {
 
 		if (event.LeftUp()) {
 			if (_3dTechnique==VolumeRendering) {
@@ -528,7 +528,7 @@ void appWxVtkInteractor::OnMotion(wxMouseEvent &event)
 				wxVRGui->get_viewer3d()->updateViewer();
 			}
 		}
-		else if (event.LeftIsDown() && ( _interactionType == rotateAround3dSR || _interactionType == rotateAround3d ) )
+		else if (event.LeftIsDown() && ( _interactionType == rotateAround3dSR || _interactionType == rotateAround3d || _interactionType == rotate3d) )
 			{				
 				if (_3dTechnique == VolumeRendering)
 				{
