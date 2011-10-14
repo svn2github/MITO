@@ -20,6 +20,7 @@
 
 #include <vtkRendererCollection.h>
 #include "WiiCommandEvents.h"
+#include "vtkMitoInteractorStyleTrackball.h"
 
 BEGIN_EVENT_TABLE(appWxVtkInteractor, wxVTKRenderWindowInteractor)
     //EVT_TIMER(-1, appWxVtkInteractor::OnFocusTimer)
@@ -43,7 +44,8 @@ appWxVtkInteractor::appWxVtkInteractor(wxWindow* parent, wxWindowID id, viewerHa
 	_roiManager = NULL; 
 	_segmentationManager = NULL;
 	_wlWwModified = true;
-	vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
+	vtkMitoInteractorStyleTrackball* style = vtkMitoInteractorStyleTrackball::New();
+	//vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
 	this->SetInteractorStyle(style);
 	style->Delete();
 

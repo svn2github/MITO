@@ -30,6 +30,7 @@
 #include <vtkInteractorStyleTrackballActor.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 #include "vtkInteractorStyleWIITrackball.h"
+#include "vtkMitoInteractorStyleTrackball.h"
 #include "WiiCommandEvents.h"
 #include <vtkLineSource.h>
 #include <vtkPProbeFilter.h>
@@ -1217,7 +1218,8 @@ void wxVolumeRenderingGui::onWii( wxCommandEvent &event )
 
 		_viewer3d->showLeftTopInfo();
 		
-		vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
+		vtkMitoInteractorStyleTrackball *style = vtkMitoInteractorStyleTrackball::New();
+		//vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
 		appWxVtkI->SetInteractorStyle(style);
 		style->Delete();		
 
@@ -1374,7 +1376,8 @@ void wxVolumeRenderingGui::onWiiConfiguration( wxCommandEvent &event )
 		else if (appWxVtkI->getInteractionType() == voi3dVRwii) appWxVtkI->InvokeEvent(vtkWiiHomeDown,NULL);
 		//if (!appWxVtkI->closeWiiAbility()) return;
 
-		vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
+		vtkMitoInteractorStyleTrackball *style = vtkMitoInteractorStyleTrackball::New();
+		//vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
 		appWxVtkI->SetInteractorStyle(style);
 		style->Delete();	
 
@@ -1542,7 +1545,8 @@ void wxVolumeRenderingGui::onResetView(wxCommandEvent& event) {
 	this->hide3DCursor();
 
 	// passo all'interactor style trackball camera
-	vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
+	vtkMitoInteractorStyleTrackball *style = vtkMitoInteractorStyleTrackball::New();
+	//vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
 	((appWxVtkInteractor*)_viewer3d->getWxWindow())->SetInteractorStyle(style);
 	style->Delete();
 
@@ -2716,7 +2720,8 @@ void wxVolumeRenderingGui::onProjectionTypePerspective(wxCommandEvent& event)
 	_viewer3d->getRenderer()->GetActiveCamera()->ParallelProjectionOff();
 
 	// passo all'interactor style trackball camera
-	vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
+	vtkMitoInteractorStyleTrackball *style = vtkMitoInteractorStyleTrackball::New();
+	//vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
 	((appWxVtkInteractor*)_viewer3d->getWxWindow())->SetInteractorStyle(style);
 	style->Delete();
 
@@ -2753,7 +2758,8 @@ void wxVolumeRenderingGui::onProjectionTypeParallel(wxCommandEvent& event)
 	_viewer3d->getRenderer()->GetActiveCamera()->ParallelProjectionOn();
 
 	// passo all'interactor style trackball camera
-	vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
+	vtkMitoInteractorStyleTrackball *style = vtkMitoInteractorStyleTrackball::New();
+	//vtkInteractorStyleTrackballCamera *style = vtkInteractorStyleTrackballCamera::New();
 	((appWxVtkInteractor*)_viewer3d->getWxWindow())->SetInteractorStyle(style);
 	style->Delete();
 
